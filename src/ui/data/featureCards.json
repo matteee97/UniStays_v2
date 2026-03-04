@@ -1,0 +1,30 @@
+[
+  {
+    "index": "1",
+    "imgUrl": "/icons/verified.webp",
+    "title": "Annunci Verificati",
+    "desc": "Ogni annuncio viene verificato dal nostro team per aumentare sicurezza e affidabilità.",
+    "fullDesc": "Ogni annuncio pubblicato sulla nostra piattaforma è <strong>accuratamente controllato</strong> dal nostro <strong>team</strong>.<br><br>Questo processo punta a rendere il più possibile le informazioni <strong>reali, affidabili e aggiornate</strong>.<br><br>Non pubblichiamo contenuti falsi o ingannevoli: ogni annuncio deve superare una serie di <strong>criteri di qualità</strong> ben precisi.<br><br>Grazie a questa selezione, puoi cercare il tuo alloggio con <strong>tranquillità</strong>.<br><br>Inoltre, il nostro team continua a <strong>monitorare costantemente</strong> i contenuti per mantenere sempre <strong>un elevato livello di sicurezza e fiducia</strong>. <br><br>Teniamo comunque a precisare che la possibilità che un annuncio possa essere ingannevole è sempre presente, ma la nostra piattaforma è progettata per <strong>minimizzare</strong> al massimo questa possibilità.<br><br> Se noti qualcosa di sospetto, puoi segnalarlo:<strong> il nostro team verificherà e agirà rapidamente.</strong>"
+  },
+  {
+    "index": "2",
+    "imgUrl": "/icons/student.webp",
+    "title": "Per Universitari",
+    "desc": "Ricerca semplice e veloce, pensata appositamente per soddisfare esigenze di studenti universitari.",
+    "fullDesc": "La piattaforma è stata pensata <strong>esclusivamente per studenti universitari</strong>.<br><br>Qui trovi alloggi progettati per le tue esigenze, con <strong>filtri rapidi</strong> che ti aiutano a selezionare per <strong>prezzo</strong>, <strong>distanza dall’università</strong>, <strong>tipo di stanza</strong> e <strong>servizi inclusi</strong>.<br><br>Gli annunci sono orientati a un <strong>budget studentesco</strong>, e ogni proposta è pensata per offrirti <strong>comodità, sicurezza e vicinanza al campus</strong>.<br><br>Non perdi tempo: il sistema ti mostra solo le opzioni <strong>veramente utili per la tua vita da studente</strong>.<br><br><strong>Facile, veloce, mirato.</strong>"
+  },
+  {
+    "index": "3",
+    "imgUrl": "/icons/filter.webp",
+    "title": "Filtri Smart",
+    "desc": "Filtra per città, distanza, prezzo e trova l'alloggio che più soddisfa le tue esigenze.",
+    "fullDesc": "Grazie ai <strong>filtri smart</strong> puoi personalizzare la tua ricerca con un livello di precisione incredibile.<br><br>Filtra per <strong>città</strong>, <strong>distanza dalla tua università</strong>, <strong>prezzo massimo</strong>, <strong>tipo di alloggio</strong> e molto altro.<br><br>Risparmi tempo evitando di scorrere tra centinaia di annunci inutili.<br><br>Il nostro sistema mostra solo quelli <strong>che rispecchiano davvero i tuoi criteri</strong>, così puoi concentrarti solo su ciò che conta.<br><br>La <strong>ricerca intelligente</strong> è ciò che rende la nostra piattaforma <strong>efficiente e intuitiva</strong>."
+  },
+  {
+    "index": "4",
+    "imgUrl": "/icons/qr.webp",
+    "title": "Cerca con QR Code",
+    "desc": "Inquadra il QR code posto sull'annuncio cartaceo ed esplora. Pratico, rapido, efficace.",
+    "fullDesc": "Abbiamo integrato i <strong>QR Code</strong> per rendere l’esperienza ancora più semplice.<br><br>Ogni annuncio cartaceo presenta un QR che puoi <strong>scansionare con lo smartphone</strong>: in un attimo accedi alla scheda completa con <strong>foto, descrizione dettagliata e contatti</strong>.<br><br>È un sistema <strong>rapido e pratico</strong>, pensato per chi vuole <strong>saltare la ricerca manuale</strong> e andare dritto al punto.<br><br>Porta sempre con te tutte le info che ti servono, ovunque ti trovi.<br><br>Il cartaceo incontra il <strong>digitale</strong>, e la tua ricerca diventa sempre più <strong>smart ed efficace</strong>."
+  }
+]

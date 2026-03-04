@@ -1,0 +1,698 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helpers
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == "admin";
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // =========================
+    // USER DOCUMENTS
+    // =========================
+    match /usersPublic/{userId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /usersPrivate/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update, delete: if isAdmin();
+
+      match /favorites/{apartmentId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    // =========================
+    // APARTMENTS
+    // =========================
+    match /apartments/{apartmentId} {
+      function changedKeys() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      function isOwnerOfDoc() {
+        return isOwner(resource.data.ownerId);
+      }
+
+      function isOwnerOfRequest() {
+        return isAuthenticated()
+          && request.resource.data.ownerId == request.auth.uid;
+      }
+
+      function allowedApartmentStatuses() {
+        return ["draft", "pending_review", "published", "rejected", "archived"];
+      }
+
+      function apartmentKeys() {
+        return [
+          "title",
+          "description",
+          "address",
+          "features",
+          "houseRules",
+          "amenities",
+          "additionalInfo",
+          "apartmentPhotoUrls",
+          "ownerId",
+          "ownerSnapshot",
+          "status",
+          "isFeatured",
+          "aggregates",
+          "metrics",
+          "createdAt",
+          "updatedAt",
+          "submittedAt",
+          "publishedAt"
+        ];
+      }
+
+      function ownerEditableKeys() {
+        return [
+          "title",
+          "description",
+          "address",
+          "features",
+          "houseRules",
+          "amenities",
+          "additionalInfo",
+          "apartmentPhotoUrls",
+          "ownerSnapshot",
+          "updatedAt"
+        ];
+      }
+
+      function validStatus() {
+        return request.resource.data.status is string
+          && request.resource.data.status in allowedApartmentStatuses();
+      }
+
+      function validAddress() {
+        return request.resource.data.address is map
+          && request.resource.data.address.keys().hasOnly([
+            "street",
+            "city",
+            "provinceCode",
+            "postalCode",
+            "area",
+            "location"
+          ])
+          && request.resource.data.address.street is string
+          && request.resource.data.address.city is string
+          && request.resource.data.address.provinceCode is string
+          && request.resource.data.address.postalCode is string
+          && request.resource.data.address.area is string
+          && request.resource.data.address.location is latlng;
+      }
+
+      function validFeatures() {
+        return request.resource.data.features is map
+          && request.resource.data.features.keys().hasOnly([
+            "totalAreaMq",
+            "bathroomsCount",
+            "heatingType",
+            "utilitiesIncluded",
+            "floor",
+            "propertyCondition",
+            "garageType",
+            "gardenType"
+          ])
+          && request.resource.data.features.totalAreaMq is number
+          && request.resource.data.features.totalAreaMq > 0
+          && request.resource.data.features.totalAreaMq <= 1000
+          && request.resource.data.features.bathroomsCount is int
+          && request.resource.data.features.bathroomsCount > 0
+          && request.resource.data.features.bathroomsCount <= 15
+          && request.resource.data.features.utilitiesIncluded is bool
+          && (request.resource.data.features.floor is int
+            || request.resource.data.features.floor is string)
+          && request.resource.data.features.heatingType is string
+          && request.resource.data.features.propertyCondition is string
+          && request.resource.data.features.garageType is string
+          && request.resource.data.features.gardenType is string;
+      }
+
+      function validHouseRules() {
+        return request.resource.data.houseRules is map
+          && request.resource.data.houseRules.keys().hasOnly([
+            "studentsOnly",
+            "petsAllowed",
+            "smokingAllowed",
+            "partiesForbidden"
+          ])
+          && request.resource.data.houseRules.studentsOnly is string
+          && request.resource.data.houseRules.petsAllowed is bool
+          && request.resource.data.houseRules.smokingAllowed is bool
+          && request.resource.data.houseRules.partiesForbidden is bool;
+      }
+
+      function validAmenities() {
+        return request.resource.data.amenities is map
+          && request.resource.data.amenities.keys().hasOnly([
+            "parking",
+            "wifi",
+            "airConditioning",
+            "kitchenType",
+            "washer",
+            "elevator",
+            "balcony",
+            "kitchenBasics",
+            "kitchenware",
+            "dishwasher",
+            "oven",
+            "tv",
+            "deskInRoom",
+            "dryer",
+            "microwave"
+          ])
+          && request.resource.data.amenities.parking is bool
+          && request.resource.data.amenities.wifi is bool
+          && request.resource.data.amenities.airConditioning is bool
+          && request.resource.data.amenities.kitchenType is string
+          && request.resource.data.amenities.washer is bool
+          && request.resource.data.amenities.elevator is bool
+          && request.resource.data.amenities.balcony is bool
+          && request.resource.data.amenities.kitchenBasics is bool
+          && request.resource.data.amenities.kitchenware is bool
+          && request.resource.data.amenities.dishwasher is bool
+          && request.resource.data.amenities.oven is bool
+          && request.resource.data.amenities.tv is bool
+          && request.resource.data.amenities.deskInRoom is bool
+          && request.resource.data.amenities.dryer is bool
+          && request.resource.data.amenities.microwave is bool;
+      }
+
+      function validAdditionalInfo() {
+        return request.resource.data.additionalInfo is string;
+      }
+
+      function validOwnerSnapshot() {
+        return request.resource.data.ownerSnapshot is map
+          && request.resource.data.ownerSnapshot.keys().hasOnly([
+            "displayName",
+            "photoUrl",
+            "isVerified",
+            "roleBadge",
+            "ownerId",
+            "bio",
+            "inPlatformSince"
+          ])
+          && request.resource.data.ownerSnapshot.displayName is string
+          && (request.resource.data.ownerSnapshot.photoUrl is string
+            || request.resource.data.ownerSnapshot.photoUrl == null)
+          && request.resource.data.ownerSnapshot.isVerified is bool
+          && (request.resource.data.ownerSnapshot.roleBadge is string
+            || request.resource.data.ownerSnapshot.roleBadge == null)
+          && (request.resource.data.ownerSnapshot.bio is string
+            || request.resource.data.ownerSnapshot.bio == null)
+          && request.resource.data.ownerSnapshot.ownerId is string
+          && request.resource.data.ownerSnapshot.inPlatformSince is timestamp;
+      }
+
+      function validApartmentPhotos() {
+        return request.resource.data.apartmentPhotoUrls is list;
+      }
+
+      function aggregatesKeys() {
+        return [
+          "minRoomPrice",
+          "maxRoomPrice",
+          "totalRooms",
+          "totalRoomsAvailable",
+          "isAvailableNow",
+          "availableFromMin"
+        ];
+      }
+
+      function validAggregates() {
+        return request.resource.data.aggregates is map
+          && request.resource.data.aggregates.keys().hasOnly(aggregatesKeys())
+          && (request.resource.data.aggregates.minRoomPrice is number
+            || request.resource.data.aggregates.minRoomPrice == null)
+          && (request.resource.data.aggregates.maxRoomPrice is number
+            || request.resource.data.aggregates.maxRoomPrice == null)
+          && request.resource.data.aggregates.totalRooms is int
+          && request.resource.data.aggregates.totalRooms >= 0
+          && request.resource.data.aggregates.totalRoomsAvailable is int
+          && request.resource.data.aggregates.totalRoomsAvailable >= 0
+          && request.resource.data.aggregates.totalRoomsAvailable
+            <= request.resource.data.aggregates.totalRooms
+          && request.resource.data.aggregates.isAvailableNow is bool
+          && (!request.resource.data.aggregates.keys().hasAny(["availableFromMin"])
+            || request.resource.data.aggregates.availableFromMin is timestamp
+            || request.resource.data.aggregates.availableFromMin == null);
+      }
+
+      function metricsKeys() {
+        return [
+          "totalViews",
+          "likesCount",
+          "totalReports",
+          "reviewsCount",
+          "ratingSum",
+          "ratingAvg",
+          "ratingCount",
+          "score",
+          "updatedAt"
+        ];
+      }
+
+      function validMetrics() {
+        return request.resource.data.metrics is map
+          && request.resource.data.metrics.keys().hasOnly(metricsKeys())
+          && request.resource.data.metrics.totalViews is int
+          && request.resource.data.metrics.likesCount is int
+          && request.resource.data.metrics.totalReports is int
+          && request.resource.data.metrics.reviewsCount is int
+          && request.resource.data.metrics.ratingSum is int
+          && request.resource.data.metrics.ratingAvg is number
+          && request.resource.data.metrics.ratingCount is int
+          && (request.resource.data.metrics.score is number
+            || request.resource.data.metrics.score == null)
+          && request.resource.data.metrics.updatedAt is timestamp;
+      }
+
+      function isMetricsUpdateOnly() {
+        return changedKeys().hasOnly(["metrics"])
+          && request.resource.data.metrics.keys().hasOnly(metricsKeys());
+      }
+
+      allow get, list: if resource.data.status == "published"
+        || isOwnerOfDoc()
+        || isAdmin();
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // ROOMS (subcollection)
+    // =========================
+    match /apartments/{apartmentId}/rooms/{roomId} {
+      function apartmentPath() {
+        return /databases/$(database)/documents/apartments/$(apartmentId);
+      }
+
+      function apartmentExists() {
+        return exists(apartmentPath());
+      }
+
+      function apartmentData() {
+        return get(apartmentPath()).data;
+      }
+
+      function isApartmentOwner() {
+        return isAuthenticated()
+          && apartmentExists()
+          && request.auth.uid == apartmentData().ownerId;
+      }
+
+      function allowedRoomTypes() {
+        return ["single", "double", "entire_apartment"];
+      }
+
+      function roomKeys() {
+        return [
+          "roomId",
+          "type",
+          "priceMonthly",
+          "areaMq",
+          "furnishing",
+          "availability",
+          "photoUrls",
+          "notes",
+          "createdAt",
+          "updatedAt"
+        ];
+      }
+
+      function validAvailability() {
+        return request.resource.data.availability is map
+          && request.resource.data.availability.keys().hasOnly([
+            "isAvailableNow",
+            "availableFrom"
+          ])
+          && request.resource.data.availability.isAvailableNow is bool
+          && (!request.resource.data.availability.keys().hasAny(["availableFrom"])
+            || request.resource.data.availability.availableFrom is timestamp
+            || request.resource.data.availability.availableFrom == null);
+      }
+
+      function validRoom() {
+        return request.resource.data.keys().hasOnly(roomKeys())
+          && request.resource.data.roomId is string
+          && request.resource.data.roomId == roomId
+          && request.resource.data.type is string
+          && request.resource.data.type in allowedRoomTypes()
+          && request.resource.data.priceMonthly is number
+          && request.resource.data.priceMonthly > 0
+          && request.resource.data.areaMq is number
+          && request.resource.data.areaMq > 0
+          && request.resource.data.furnishing is string
+          && request.resource.data.photoUrls is list
+          && request.resource.data.notes is string
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.updatedAt is timestamp
+          && validAvailability();
+      }
+
+      allow get, list: if isAdmin()
+        || isApartmentOwner()
+        || (apartmentExists() && apartmentData().status == "published");
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // ANALYTICS (subcollection)
+    // =========================
+    match /apartments/{apartmentId}/analytics/summary {
+      function apartmentOwnerId() {
+        return get(/databases/$(database)/documents/apartments/$(apartmentId)).data.ownerId;
+      }
+
+      function validSummaryWrite() {
+        return request.resource.data.keys().hasOnly([
+          "createdAt",
+          "updatedAt",
+          "lastViewAt",
+          "lastLikeAt",
+          "lastReviewAt",
+          "lastEventAt",
+          "dailyViews"
+        ])
+        && (!request.resource.data.keys().hasAny(["createdAt"])
+          || request.resource.data.createdAt is timestamp)
+        && (!request.resource.data.keys().hasAny(["updatedAt"])
+          || request.resource.data.updatedAt is timestamp)
+        && (!request.resource.data.keys().hasAny(["lastViewAt"])
+          || request.resource.data.lastViewAt is timestamp)
+        && (!request.resource.data.keys().hasAny(["lastLikeAt"])
+          || request.resource.data.lastLikeAt is timestamp)
+        && (!request.resource.data.keys().hasAny(["lastReviewAt"])
+          || request.resource.data.lastReviewAt is timestamp)
+        && (!request.resource.data.keys().hasAny(["lastEventAt"])
+          || request.resource.data.lastEventAt is timestamp)
+        && (!request.resource.data.keys().hasAny(["dailyViews"])
+          || request.resource.data.dailyViews is map);
+      }
+
+      allow read: if isAdmin() || (
+        isAuthenticated() && request.auth.uid == apartmentOwnerId()
+      );
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /apartments/{apartmentId}/analytics/summary/daily/{dayId} {
+      function apartmentOwnerId() {
+        return get(/databases/$(database)/documents/apartments/$(apartmentId)).data.ownerId;
+      }
+
+      allow read: if isAdmin() || (
+        isAuthenticated() && request.auth.uid == apartmentOwnerId()
+      );
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // CITIES
+    // =========================
+    match /cities/{cityId} {
+      // get singolo doc
+      allow read: if resource.data.active == true;
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // REPORTS
+    // =========================
+    match /reports/{reportId} {
+      function allowedReportReasons() {
+        return [
+          "scam",
+          "spam",
+          "harassment",
+          "fakeListing",
+          "inappropriateContent",
+          "other"
+        ];
+      }
+
+      function allowedReportStatuses() {
+        return [
+          "open",
+          "reviewing",
+          "resolved",
+          "rejected"
+        ];
+      }
+
+      function allowedReportPriorities() {
+        return [
+          "low",
+          "medium",
+          "high"
+        ];
+      }
+
+      function allowedReportSeverities() {
+        return [
+          "low",
+          "medium",
+          "high",
+          "critical"
+        ];
+      }
+
+      function hasReportKeys() {
+        return request.resource.data.keys().hasOnly([
+          "target",
+          "reporterId",
+          "reporterSnapshot",
+          "reason",
+          "message",
+          "status",
+          "priority",
+          "severity",
+          "moderation",
+          "resolution",
+          "createdAt",
+          "updatedAt"
+        ]);
+      }
+
+      function reportTargetValid() {
+        return request.resource.data.target is map
+          && request.resource.data.target.keys().hasOnly([
+            "type",
+            "id",
+            "apartmentId",
+            "ownerId"
+          ])
+          && request.resource.data.target.type is string
+          && request.resource.data.target.id is string
+          && request.resource.data.target.type in [
+            "apartment",
+            "user",
+            "review",
+            "message"
+          ]
+          && (!request.resource.data.target.keys().hasAny(["apartmentId"])
+            || request.resource.data.target.apartmentId is string)
+          && (!request.resource.data.target.keys().hasAny(["ownerId"])
+            || request.resource.data.target.ownerId is string
+            || request.resource.data.target.ownerId == null);
+      }
+
+      function reporterSnapshotValid() {
+        return !request.resource.data.keys().hasAny(["reporterSnapshot"])
+          || (
+            request.resource.data.reporterSnapshot is map
+            && request.resource.data.reporterSnapshot.keys().hasOnly([
+              "displayName",
+              "photoUrl"
+            ])
+            && (!request.resource.data.reporterSnapshot.keys().hasAny(["displayName"])
+              || request.resource.data.reporterSnapshot.displayName is string
+              || request.resource.data.reporterSnapshot.displayName == null)
+            && (!request.resource.data.reporterSnapshot.keys().hasAny(["photoUrl"])
+              || request.resource.data.reporterSnapshot.photoUrl is string
+              || request.resource.data.reporterSnapshot.photoUrl == null)
+          );
+      }
+
+      function reportModerationValid() {
+        return !request.resource.data.keys().hasAny(["moderation"])
+          || (
+            request.resource.data.moderation is map
+            && request.resource.data.moderation.keys().hasOnly([
+              "action",
+              "handledBy",
+              "handledAt",
+              "note"
+            ])
+            && (!request.resource.data.moderation.keys().hasAny(["action"])
+              || request.resource.data.moderation.action is string
+              || request.resource.data.moderation.action == null)
+            && (!request.resource.data.moderation.keys().hasAny(["handledBy"])
+              || request.resource.data.moderation.handledBy is string
+              || request.resource.data.moderation.handledBy == null)
+            && (!request.resource.data.moderation.keys().hasAny(["handledAt"])
+              || request.resource.data.moderation.handledAt is timestamp
+              || request.resource.data.moderation.handledAt == null)
+            && (!request.resource.data.moderation.keys().hasAny(["note"])
+              || request.resource.data.moderation.note is string
+              || request.resource.data.moderation.note == null)
+          );
+      }
+
+      function reportResolutionValid() {
+        return !request.resource.data.keys().hasAny(["resolution"])
+          || (
+            request.resource.data.resolution is map
+            && request.resource.data.resolution.keys().hasOnly([
+              "code",
+              "note",
+              "resolvedAt"
+            ])
+            && (!request.resource.data.resolution.keys().hasAny(["code"])
+              || request.resource.data.resolution.code is string
+              || request.resource.data.resolution.code == null)
+            && (!request.resource.data.resolution.keys().hasAny(["note"])
+              || request.resource.data.resolution.note is string
+              || request.resource.data.resolution.note == null)
+            && (!request.resource.data.resolution.keys().hasAny(["resolvedAt"])
+              || request.resource.data.resolution.resolvedAt is timestamp
+              || request.resource.data.resolution.resolvedAt == null)
+          );
+      }
+
+      function validReportDocument() {
+        return hasReportKeys()
+          && request.resource.data.reporterId is string
+          && request.resource.data.reporterId.size() > 0
+          && request.resource.data.message is string
+          && request.resource.data.message.size() > 0
+          && request.resource.data.reason in allowedReportReasons()
+          && request.resource.data.status in allowedReportStatuses()
+          && request.resource.data.priority in allowedReportPriorities()
+          && request.resource.data.severity in allowedReportSeverities()
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.updatedAt is timestamp
+          && reportTargetValid()
+          && reporterSnapshotValid()
+          && reportModerationValid()
+          && reportResolutionValid();
+      }
+
+      allow create: if isAdmin()
+        && validReportDocument();
+
+      allow read: if isAdmin()
+        || (isAuthenticated() && request.auth.uid == resource.data.reporterId);
+
+      allow update: if isAdmin()
+        && validReportDocument()
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if isAdmin();
+    }
+
+    // =========================
+    // CONVERSATIONS
+    // =========================
+    match /conversations/{conversationId} {
+
+      function changedKeys() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      function isParticipant() {
+        return isAuthenticated()
+          && request.auth.uid in resource.data.participants;
+      }
+
+      allow read: if isParticipant() || isAdmin();
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // PLATFORM CONVERSATIONS
+    // =========================
+    match /platformConversations/{conversationId} {
+
+      function validPlatformConversationCreate() {
+        return request.resource.data.keys().hasOnly(["userId", "createdAt"])
+          && request.resource.data.userId is string;
+      }
+
+      allow read: if isAdmin()
+        || (isAuthenticated() && request.auth.uid == resource.data.userId);
+
+      allow create: if isAdmin()
+        && validPlatformConversationCreate();
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /platformConversations/{conversationId}/messages/{messageId} {
+      function changedKeys() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      function platformOwnerId() {
+        return get(/databases/$(database)/documents/platformConversations/$(conversationId)).data.userId;
+      }
+
+      allow read: if isAuthenticated()
+        && (isAdmin() || request.auth.uid == platformOwnerId());
+
+      allow create: if isAdmin()
+        && request.resource.data.senderId == "platform_unistays";
+
+      allow update, delete: if isAdmin();
+    }
+
+    // =========================
+    // MESSAGES
+    // =========================
+    match /conversations/{conversationId}/messages/{messageId} {
+      function participants() {
+        return get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+      }
+
+      allow read: if isAuthenticated()
+        && (request.auth.uid in participants() || isAdmin());
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // REVIEWS
+    // =========================
+    match /apartments/{apartmentId}/reviews/{reviewId} {
+      allow read: if true;
+
+      allow create, update, delete: if isAdmin();
+
+      match /replies/{replyId} {
+        allow read: if true;
+
+        allow create, update, delete: if isAdmin();
+      }
+    }
+  }
+}

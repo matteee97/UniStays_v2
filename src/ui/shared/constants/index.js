@@ -1,0 +1,1 @@
+export const FALLBACK_IMAGE = "/img/appartamenti/default.jpg"; 
