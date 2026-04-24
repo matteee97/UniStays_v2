@@ -141,7 +141,7 @@ Esempio `apartments/{apartmentId}`:
     "updatedAt": "<timestamp>"
   },
   "occupantListingSnapshot": {
-    "visibleOccupantsCount": 2,
+    "visibleOccupantsCount": 3,
     "avatarUrls": ["https://.../avatar-1.jpg", "https://.../avatar-2.jpg"],
     "items": [
       {
@@ -154,6 +154,12 @@ Esempio `apartments/{apartmentId}`:
         "occupantId": "occ_2",
         "displayName": "Sara",
         "initials": "S",
+        "avatarUrl": null
+      },
+      {
+        "occupantId": "occ_3",
+        "displayName": "Marco",
+        "initials": "M",
         "avatarUrl": null
       }
     ],

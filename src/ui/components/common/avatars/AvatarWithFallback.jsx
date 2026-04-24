@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
 
 const AVATAR_PALETTES = [
   "from-[#1f6f7a] via-[#2d8c8a] to-[#8de1d4]",
@@ -14,12 +16,9 @@ const buildSeed = (value = "") =>
   );
 
 const buildInitials = (value = "") => {
-  const parts = String(value)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const parts = String(value).trim().split(/\s+/).filter(Boolean);
 
-  if (!parts.length) return "U";
+  if (!parts.length) return "";
 
   return parts
     .slice(0, 2)
@@ -28,10 +27,10 @@ const buildInitials = (value = "") => {
 };
 
 /**
- * Avatar con fallback deterministico a iniziali quando l'immagine manca o fallisce.
+ * Avatar con fallback deterministico quando l'immagine manca o fallisce.
  *
- * Il componente evita placeholder statici fragili e genera un fallback visivo
- * coerente con il nome o l'identificativo disponibile.
+ * Usa le iniziali quando il nome e disponibile; altrimenti mantiene lo stesso
+ * sfondo generato e mostra un'icona utente neutra.
  */
 export default function AvatarWithFallback({
   avatarUrl,
@@ -76,7 +75,13 @@ export default function AvatarWithFallback({
           <span
             className={`font-bold leading-none text-white drop-shadow-sm ${initialsClassName}`}
           >
-            {initials}
+            {initials || (
+              <FontAwesomeIcon
+                icon={faUser}
+                className="h-4 w-4 mt-1"
+                aria-hidden="true"
+              />
+            )}
           </span>
         </div>
       )}

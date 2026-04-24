@@ -4,6 +4,7 @@ import CardImageSlider from "./CardImageSlider";
 import { FeaturedBadge } from "../badges/Badge";
 import { getPriceRangeLabel } from "@/ui/helpers/apartmentPricing";
 import { HeartToggle } from "..";
+import AvatarWithFallback from "@/ui/components/common/avatars/AvatarWithFallback";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBath,
@@ -21,18 +22,6 @@ export default function ApartmentCard({
   userId,
   liked,
 }) {
-  const toInitials = (value = "") => {
-    const parts = String(value)
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (!parts.length) return "U";
-    return parts
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("");
-  };
-
   const highlights = useMemo(
     () => [
       {
@@ -68,9 +57,34 @@ export default function ApartmentCard({
   const priceLabel = getPriceRangeLabel(app.aggregates, true);
   const roommateSnapshot = app.occupantListingSnapshot || {};
   const visibleRoommates = Number(roommateSnapshot.visibleOccupantsCount) || 0;
-  const roommateItems = Array.isArray(roommateSnapshot.items)
-    ? roommateSnapshot.items.slice(0, 2)
-    : [];
+  const roommateItems = useMemo(() => {
+    const snapshotItems = Array.isArray(roommateSnapshot.items)
+      ? roommateSnapshot.items
+      : [];
+
+    if (snapshotItems.length) {
+      return Array.from({ length: visibleRoommates }, (_, index) => {
+        const item = snapshotItems[index] || {};
+        const displayName = item.displayName || item.initials || "";
+
+        return {
+          avatarUrl: item.avatarUrl || "",
+          displayName,
+          key: item.occupantId || `${displayName}-${index}`,
+        };
+      });
+    }
+
+    const avatarUrls = Array.isArray(roommateSnapshot.avatarUrls)
+      ? roommateSnapshot.avatarUrls
+      : [];
+
+    return Array.from({ length: visibleRoommates }, (_, index) => ({
+      avatarUrl: avatarUrls[index] || "",
+      displayName: "",
+      key: `coinquilino-${index}`,
+    }));
+  }, [roommateSnapshot.avatarUrls, roommateSnapshot.items, visibleRoommates]);
   const topTags = Array.isArray(roommateSnapshot.topTags)
     ? roommateSnapshot.topTags.slice(0, 2)
     : [];
@@ -126,38 +140,20 @@ export default function ApartmentCard({
         {visibleRoommates > 0 && (
           <div className="flex items-center gap-2 pt-1 text-xs text-gray-500">
             <div className="flex -space-x-2">
-              {roommateItems.length
-                ? roommateItems.map((item, index) =>
-                    item?.avatarUrl ? (
-                      <img
-                        key={`${item.avatarUrl}-${index}`}
-                        src={item.avatarUrl}
-                        alt={item.displayName || ""}
-                        className="h-6 w-6 rounded-full border-2 border-white object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span
-                        key={`${item.initials || "u"}-${index}`}
-                        className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[9px] font-bold text-white shadow-sm ${
-                          index % 2 === 0
-                            ? "bg-gradient-to-br from-[#1f6f7a] to-[#79d7d2]"
-                            : "bg-gradient-to-br from-[#a14f6c] to-[#ffd37b]"
-                        }`}
-                      >
-                        {item.initials || toInitials(item.displayName)}
-                      </span>
-                    ),
-                  )
-                : (roommateSnapshot.avatarUrls || []).slice(0, 2).map((avatarUrl, index) => (
-                    <img
-                      key={`${avatarUrl}-${index}`}
-                      src={avatarUrl}
-                      alt=""
-                      className="h-6 w-6 rounded-full border-2 border-white object-cover"
-                      loading="lazy"
-                    />
-                  ))}
+              {roommateItems.map((item) => (
+                <AvatarWithFallback
+                  key={item.key}
+                  avatarUrl={item.avatarUrl}
+                  name={item.displayName}
+                  alt={
+                    item.displayName
+                      ? `Avatar di ${item.displayName}`
+                      : "Avatar coinquilino"
+                  }
+                  className="h-6 w-6 rounded-full border-2 border-white shadow-sm"
+                  initialsClassName="text-[9px]"
+                />
+              ))}
             </div>
             <span className="line-clamp-1">
               {visibleRoommates} coinquilin{visibleRoommates === 1 ? "o" : "i"}

@@ -1,7 +1,7 @@
 // User Types
 export const USER_ROLES = {
   STUDENT: 'student',
-  HOST: 'pippo il cane bello',
+  HOST: 'host',
   ADMIN: 'admin',
 };
 

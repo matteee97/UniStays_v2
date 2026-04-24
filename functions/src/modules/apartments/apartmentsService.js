@@ -27,7 +27,6 @@ const DEFAULT_OCCUPANT_POLICY_VERSION = "2026-03-occupants-v1";
 const MAX_ROOM_PHOTOS = 3;
 const MAX_APARTMENT_PHOTOS = 8;
 const MAX_PUBLIC_LIST_ITEMS = 12;
-const MAX_SNAPSHOT_AVATARS = 2;
 const MAX_SNAPSHOT_TAGS = 3;
 
 const APARTMENT_MUTABLE_KEYS = new Set([
@@ -453,9 +452,8 @@ const createApartmentsService = ({
       visibleOccupantsCount: visibleOccupants.length,
       avatarUrls: visibleOccupants
         .map((occupant) => occupant.publicProfile?.avatarUrl)
-        .filter(Boolean)
-        .slice(0, MAX_SNAPSHOT_AVATARS),
-      items: visibleOccupants.slice(0, MAX_SNAPSHOT_AVATARS).map((occupant) => ({
+        .filter(Boolean),
+      items: visibleOccupants.map((occupant) => ({
         occupantId: occupant.occupantId || null,
         displayName: occupant.publicProfile?.displayName || "",
         initials: getInitials(occupant.publicProfile?.displayName),
