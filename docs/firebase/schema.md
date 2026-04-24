@@ -59,9 +59,9 @@ Esempio `usersPrivate/{userId}/favorites/{apartmentId}`:
 
 ## Apartments
 
-Schema principale annuncio (solo write path), con aggregates denormalizzati calcolati dalle rooms.
+Schema principale annuncio e read model di listing. `aggregates`, `occupancySummary` e `occupantListingSnapshot` sono calcolati lato backend partendo da rooms/occupants.
 Status: `draft | pending_review | published | rejected | archived`.
-File coinvolti: `src/ui/hooks/forms/usePubblicaAnnuncioForm.js`, `src/infrastructure/firebase/repositories/FirestoreApartmentRepository.js`, `src/core/services/ApartmentAggregateCalculator.js`
+File coinvolti: `src/ui/hooks/forms/usePubblicaAnnuncioForm.js`, `src/infrastructure/firebase/repositories/FirestoreApartmentRepository.js`, `functions/src/modules/apartments/apartmentsService.js`
 
 Esempio `apartments/{apartmentId}`:
 
@@ -130,6 +130,38 @@ Esempio `apartments/{apartmentId}`:
     "isAvailableNow": true,
     "availableFromMin": "<timestamp>"
   },
+  "occupancySummary": {
+    "totalRooms": 3,
+    "roomsFree": 1,
+    "roomsOccupied": 1,
+    "roomsPartiallyOccupied": 0,
+    "roomsAvailableWithOccupants": 1,
+    "roomsUnknown": 0,
+    "currentOccupantsCount": 2,
+    "updatedAt": "<timestamp>"
+  },
+  "occupantListingSnapshot": {
+    "visibleOccupantsCount": 2,
+    "avatarUrls": ["https://.../avatar-1.jpg", "https://.../avatar-2.jpg"],
+    "items": [
+      {
+        "occupantId": "occ_1",
+        "displayName": "Luca",
+        "initials": "L",
+        "avatarUrl": "https://.../avatar-1.jpg"
+      },
+      {
+        "occupantId": "occ_2",
+        "displayName": "Sara",
+        "initials": "S",
+        "avatarUrl": null
+      }
+    ],
+    "topTags": ["Informatica", "Sportivo", "Non fumatore"],
+    "vibeLabel": "Vibe: Informatica",
+    "hasConsentBackedData": true,
+    "updatedAt": "<timestamp>"
+  },
   "metrics": {
     "totalViews": 0,
     "likesCount": 0,
@@ -166,8 +198,115 @@ Esempio `apartments/{apartmentId}/rooms/{roomId}`:
     "isAvailableNow": false,
     "availableFrom": "<timestamp>"
   },
+  "occupancy": {
+    "status": "available_with_occupants",
+    "capacityTotal": 2,
+    "spotsOccupied": 1,
+    "spotsAvailable": 1
+  },
+  "occupantIds": ["occ_1"],
   "photoUrls": ["https://..."],
   "notes": "Bagno in comune",
+  "createdAt": "<timestamp>",
+  "updatedAt": "<timestamp>"
+}
+```
+
+## Occupants (subcollection apartments)
+
+Layer roommate discovery con separazione public/private e consenso esplicito.
+File coinvolti: `functions/src/modules/apartments/apartmentsService.js`, `src/infrastructure/firebase/repositories/FirestoreOccupantRepository.js`, `src/ui/components/common/cards/annuncioCard/AnnuncioOccupantsModal.jsx`
+
+Esempio `apartments/{apartmentId}/occupants/{occupantId}` (pubblico):
+
+```json
+{
+  "occupantId": "occ_1",
+  "apartmentId": "apt_123",
+  "roomId": "room_1",
+  "ownerId": "user_host",
+  "city": "Roma",
+  "provinceCode": "RM",
+  "apartmentStatus": "published",
+  "presenceStatus": "present",
+  "publicProfile": {
+    "displayName": "Luca",
+    "avatarUrl": "https://...",
+    "ageRange": "21_23",
+    "university": "Sapienza",
+    "faculty": "Informatica",
+    "course": "Computer Science",
+    "shortBio": "Studio e faccio sport.",
+    "lifestyleTags": ["Informatica", "Sportivo", "Non fumatore"],
+    "interests": ["Calcio", "Palestra"],
+    "languages": ["Italiano", "English"],
+    "livingRhythm": "early_bird",
+    "cleanlinessLevel": "high",
+    "socialLevel": "balanced",
+    "weekendPresence": "mostly_home"
+  },
+  "searchableFacets": {
+    "lifestyleTags": ["informatica", "sportivo", "non fumatore"],
+    "interests": ["calcio", "palestra"],
+    "languages": ["italiano", "english"],
+    "university": "sapienza",
+    "faculty": "informatica",
+    "course": "computer science",
+    "livingRhythm": "early_bird",
+    "cleanlinessLevel": "high",
+    "socialLevel": "balanced",
+    "weekendPresence": "mostly_home"
+  },
+  "consent": {
+    "status": "granted",
+    "grantedAt": "<timestamp>",
+    "revokedAt": null,
+    "policyVersion": "2026-03-occupants-v1"
+  },
+  "visibility": {
+    "isPublic": true,
+    "reason": null
+  },
+  "moderation": {
+    "status": "visible",
+    "note": null,
+    "flaggedAt": null
+  },
+  "privateRef": "apartments/apt_123/occupantsPrivate/occ_1",
+  "createdAt": "<timestamp>",
+  "updatedAt": "<timestamp>"
+}
+```
+
+Esempio `apartments/{apartmentId}/occupantsPrivate/{occupantId}` (privato):
+
+```json
+{
+  "occupantId": "occ_1",
+  "roomId": "room_1",
+  "privateIdentity": {
+    "firstName": "Luca",
+    "lastName": "Rossi",
+    "email": "luca@example.com",
+    "phone": "+39..."
+  },
+  "consent": {
+    "status": "granted",
+    "scopes": {
+      "displayName": true,
+      "avatarUrl": true,
+      "ageRange": true,
+      "university": true,
+      "faculty": true
+    },
+    "grantedAt": "<timestamp>",
+    "revokedAt": null,
+    "policyVersion": "2026-03-occupants-v1",
+    "declaration": "Consenso raccolto in forma esplicita...",
+    "evidenceNote": "Conferma scritta in chat",
+    "obtainedByHostId": "user_host",
+    "obtainedAt": "<timestamp>"
+  },
   "createdAt": "<timestamp>",
   "updatedAt": "<timestamp>"
 }

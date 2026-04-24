@@ -8,9 +8,53 @@ import ApartmentMarker from "./ApartmentMarker";
 import SingleApartmentMarker from "./SingleApartmentMarker";
 import UniversityMarker from "./UniversityMarker";
 import { useTheme } from "@/ui/hooks";
+import { useCookieConsent } from "@/ui/hooks";
 import { containerStyle, MAP_LIBRARIES } from "./shared/constants";
 
-export default function GoogleMapComponent({
+function GoogleMapsConsentFallback({
+  onAcceptMaps,
+  onOpenPreferences,
+}) {
+    const theme = useTheme().theme;
+    const isDark = theme === "dark";
+  return (
+    <div className="relative flex h-full min-h-[320px] w-full items-center justify-center p-4">
+      <img
+        src={isDark ? "/img/map-dark.png" : "/img/map-light.png"}
+        className="absolute -inset-1 blur-sm object-cover w-full h-full"
+      />
+      <div className="w-full max-w-xl rounded-[32px] border-2 border-[#d4f1ef] bg-white/80 p-6 text-center shadow-[0_18px_60px_rgba(16,24,40,0.14)] backdrop-blur-xl sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#228E8D]">
+          Google Maps bloccata
+        </p>
+        <h3 className="mt-3 text-2xl font-semibold text-gray-900">
+          La mappa viene caricata solo dopo il tuo consenso.
+        </h3>
+        <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
+          Google Maps e le relative risorse esterne restano disattivate finche&apos;
+          non abiliti la categoria dedicata.
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <button
+            onClick={onAcceptMaps}
+            className="rounded-full bg-[#228E8D] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1b7877]"
+          >
+            Abilita mappe
+          </button>
+          <button
+            onClick={onOpenPreferences}
+            className="rounded-full border border-[#228E8D]/30 bg-white px-5 py-3 text-sm font-medium text-[#155d5c] transition hover:border-[#228E8D] hover:bg-[#f2fbfb]"
+          >
+            Preferenze cookie
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GoogleMapCanvas({
   appartamenti,
   city,
   hoveredApartmentId,
@@ -279,4 +323,21 @@ export default function GoogleMapComponent({
       <MapControls mapRef={mapRef} isStreetViewVisible={isStreetViewVisible} />
     </div>
   );
+}
+
+export default function GoogleMapComponent(props) {
+  const { categories, grantCategory, hasConsentFor, openPreferences } =
+    useCookieConsent();
+  const mapsEnabled = hasConsentFor(categories.MAPS);
+
+  if (!mapsEnabled) {
+    return (
+      <GoogleMapsConsentFallback
+        onAcceptMaps={() => grantCategory(categories.MAPS)}
+        onOpenPreferences={openPreferences}
+      />
+    );
+  }
+
+  return <GoogleMapCanvas {...props} />;
 }

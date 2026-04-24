@@ -69,6 +69,8 @@ service cloud.firestore {
           "status",
           "isFeatured",
           "aggregates",
+          "occupancySummary",
+          "occupantListingSnapshot",
           "metrics",
           "createdAt",
           "updatedAt",
@@ -229,8 +231,11 @@ service cloud.firestore {
           "maxRoomPrice",
           "totalRooms",
           "totalRoomsAvailable",
+          "roomTypes",
           "isAvailableNow",
-          "availableFromMin"
+          "availableFromMin",
+          "roomsAreaTotalMq",
+          "updatedAt"
         ];
       }
 
@@ -247,10 +252,16 @@ service cloud.firestore {
           && request.resource.data.aggregates.totalRoomsAvailable >= 0
           && request.resource.data.aggregates.totalRoomsAvailable
             <= request.resource.data.aggregates.totalRooms
+          && (!request.resource.data.aggregates.keys().hasAny(["roomTypes"])
+            || request.resource.data.aggregates.roomTypes is list)
           && request.resource.data.aggregates.isAvailableNow is bool
           && (!request.resource.data.aggregates.keys().hasAny(["availableFromMin"])
             || request.resource.data.aggregates.availableFromMin is timestamp
-            || request.resource.data.aggregates.availableFromMin == null);
+            || request.resource.data.aggregates.availableFromMin == null)
+          && (!request.resource.data.aggregates.keys().hasAny(["roomsAreaTotalMq"])
+            || request.resource.data.aggregates.roomsAreaTotalMq is number)
+          && (!request.resource.data.aggregates.keys().hasAny(["updatedAt"])
+            || request.resource.data.aggregates.updatedAt is timestamp);
       }
 
       function metricsKeys() {
@@ -328,6 +339,8 @@ service cloud.firestore {
           "areaMq",
           "furnishing",
           "availability",
+          "occupancy",
+          "occupantIds",
           "photoUrls",
           "notes",
           "createdAt",
@@ -347,6 +360,33 @@ service cloud.firestore {
             || request.resource.data.availability.availableFrom == null);
       }
 
+      function validOccupancy() {
+        return !request.resource.data.keys().hasAny(["occupancy"])
+          || (
+            request.resource.data.occupancy is map
+            && request.resource.data.occupancy.keys().hasOnly([
+              "status",
+              "capacityTotal",
+              "spotsOccupied",
+              "spotsAvailable"
+            ])
+            && request.resource.data.occupancy.status is string
+            && request.resource.data.occupancy.status in [
+              "free",
+              "occupied",
+              "partially_occupied",
+              "available_with_occupants",
+              "unknown"
+            ]
+            && request.resource.data.occupancy.capacityTotal is int
+            && request.resource.data.occupancy.capacityTotal > 0
+            && request.resource.data.occupancy.spotsOccupied is int
+            && request.resource.data.occupancy.spotsOccupied >= 0
+            && request.resource.data.occupancy.spotsAvailable is int
+            && request.resource.data.occupancy.spotsAvailable >= 0
+          );
+      }
+
       function validRoom() {
         return request.resource.data.keys().hasOnly(roomKeys())
           && request.resource.data.roomId is string
@@ -358,17 +398,84 @@ service cloud.firestore {
           && request.resource.data.areaMq is number
           && request.resource.data.areaMq > 0
           && request.resource.data.furnishing is string
+          && (!request.resource.data.keys().hasAny(["occupantIds"])
+            || request.resource.data.occupantIds is list)
           && request.resource.data.photoUrls is list
           && request.resource.data.notes is string
           && request.resource.data.createdAt is timestamp
           && request.resource.data.updatedAt is timestamp
-          && validAvailability();
+          && validAvailability()
+          && validOccupancy();
       }
 
       allow get, list: if isAdmin()
         || isApartmentOwner()
         || (apartmentExists() && apartmentData().status == "published");
 
+      allow create, update, delete: if isAdmin();
+    }
+
+    // =========================
+    // OCCUPANTS (subcollection)
+    // =========================
+    match /apartments/{apartmentId}/occupants/{occupantId} {
+      function apartmentPath() {
+        return /databases/$(database)/documents/apartments/$(apartmentId);
+      }
+
+      function apartmentExists() {
+        return exists(apartmentPath());
+      }
+
+      function apartmentData() {
+        return get(apartmentPath()).data;
+      }
+
+      function isApartmentOwner() {
+        return isAuthenticated()
+          && apartmentExists()
+          && request.auth.uid == apartmentData().ownerId;
+      }
+
+      function isPublicOccupantVisible() {
+        return resource.data.keys().hasAll(["visibility", "consent", "moderation"])
+          && resource.data.visibility is map
+          && resource.data.consent is map
+          && resource.data.moderation is map
+          && resource.data.visibility.isPublic == true
+          && resource.data.consent.status == "granted"
+          && resource.data.moderation.status == "visible";
+      }
+
+      allow get, list: if isAdmin()
+        || isApartmentOwner()
+        || (apartmentExists()
+          && apartmentData().status == "published"
+          && isPublicOccupantVisible());
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /apartments/{apartmentId}/occupantsPrivate/{occupantId} {
+      function apartmentPath() {
+        return /databases/$(database)/documents/apartments/$(apartmentId);
+      }
+
+      function apartmentExists() {
+        return exists(apartmentPath());
+      }
+
+      function apartmentData() {
+        return get(apartmentPath()).data;
+      }
+
+      function isApartmentOwner() {
+        return isAuthenticated()
+          && apartmentExists()
+          && request.auth.uid == apartmentData().ownerId;
+      }
+
+      allow get, list: if isAdmin() || isApartmentOwner();
       allow create, update, delete: if isAdmin();
     }
 

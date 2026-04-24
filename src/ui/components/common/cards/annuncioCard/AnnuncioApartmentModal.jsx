@@ -34,7 +34,7 @@ export default function AnnuncioApartmentModal({
   onApartmentUpdated,
 }) {
   const [formData, setFormData] = useState(() =>
-    buildFormDataFromAnnuncio(annuncio)
+    buildFormDataFromAnnuncio(annuncio),
   );
   const [roomsSnapshot, setRoomsSnapshot] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
@@ -48,7 +48,7 @@ export default function AnnuncioApartmentModal({
       ...formData,
       rooms: roomsSnapshot,
     }),
-    [formData, roomsSnapshot]
+    [formData, roomsSnapshot],
   );
 
   const validationRules = useMemo(() => {
@@ -158,7 +158,7 @@ export default function AnnuncioApartmentModal({
       validation.clearFieldError,
       validation.touchField,
       validation.validateSingleField,
-    ]
+    ],
   );
 
   const handleBlur = useCallback(
@@ -168,7 +168,7 @@ export default function AnnuncioApartmentModal({
       validation.touchField(name);
       validation.validateSingleField(name);
     },
-    [validation.touchField, validation.validateSingleField]
+    [validation.touchField, validation.validateSingleField],
   );
 
   const removePhotoUrl = useCallback(
@@ -176,11 +176,11 @@ export default function AnnuncioApartmentModal({
       setFormData((prev) => ({
         ...prev,
         apartmentPhotoUrls: (prev.apartmentPhotoUrls || []).filter(
-          (url) => url !== urlToRemove
+          (url) => url !== urlToRemove,
         ),
       }));
       setRemovedPhotoUrls((prev) =>
-        prev.includes(urlToRemove) ? prev : [...prev, urlToRemove]
+        prev.includes(urlToRemove) ? prev : [...prev, urlToRemove],
       );
       const fieldName = "apartmentPhotoFiles";
       validation.touchField(fieldName);
@@ -188,7 +188,7 @@ export default function AnnuncioApartmentModal({
         validation.validateSingleField(fieldName);
       }, 0);
     },
-    [validation.touchField, validation.validateSingleField]
+    [validation.touchField, validation.validateSingleField],
   );
 
   const handleSave = async () => {
@@ -196,7 +196,7 @@ export default function AnnuncioApartmentModal({
     const isValid = validation.validateAll();
     if (!isValid) {
       Object.keys(validationRules).forEach((field) =>
-        validation.touchField(field)
+        validation.touchField(field),
       );
       toast.error("Completa i campi obbligatori prima di salvare.");
       return;
@@ -218,7 +218,7 @@ export default function AnnuncioApartmentModal({
       const uploadedUrls = Array.isArray(formData.apartmentPhotoFiles)
         ? await compressAndUploadImages(
             formData.apartmentPhotoFiles,
-            annuncio.id
+            annuncio.id,
           )
         : [];
 
@@ -247,7 +247,7 @@ export default function AnnuncioApartmentModal({
 
       await FirestoreApartmentRepository.updateApartment(
         annuncio.id,
-        updatedData
+        updatedData,
       );
 
       onApartmentUpdated?.(updatedData);
@@ -266,13 +266,15 @@ export default function AnnuncioApartmentModal({
 
   const remainingPhotoSlots = Math.max(
     MAX_APARTMENT_PHOTOS - (formData.apartmentPhotoUrls?.length || 0),
-    0
+    0,
   );
 
   return (
     <Modal
       title="Modifica informazioni appartamento"
       onClose={onClose}
+      disableEffects
+      disableDistortion
       disableOutsideClick
     >
       <div className="space-y-8 w-full md:w-[70vh] lg:min-w-[960px] min-h-[90vh] sm:max-w-5xl">
@@ -299,6 +301,8 @@ export default function AnnuncioApartmentModal({
           handleBlur={handleBlur}
           showTips={false}
           shadow={false}
+          getFieldError={validation.getFieldError}
+          hasFieldError={validation.hasFieldError}
         />
       </div>
 

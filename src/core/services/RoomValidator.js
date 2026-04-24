@@ -1,9 +1,20 @@
-import { APARTMENTS, PRICES, ROOM_TYPES } from "@/shared/types";
+import {
+  APARTMENTS,
+  PRICES,
+  ROOM_OCCUPANCY_STATUS,
+  ROOM_TYPES,
+} from "@/shared/types";
+import {
+  getRoomOccupancyConsistencyIssues,
+  isRoomOccupancyStatusValid,
+  normalizeRoomOccupancy,
+} from "@/core/services/RoomOccupancyDomain";
 
 const ROOM_TYPE_VALUES = Object.values(ROOM_TYPES);
 const MIN_PUBLISH_PRICE = Math.max(PRICES.MIN_PRICE, 1);
 const MIN_ROOM_AREA = APARTMENTS.MIN_ROOM_SQUARE_METERS;
 const MAX_ROOM_AREA = APARTMENTS.MAX_ROOM_SQUARE_METERS;
+const ROOM_OCCUPANCY_VALUES = Object.values(ROOM_OCCUPANCY_STATUS);
 
 const isNonEmptyString = (value) =>
   typeof value === "string" && value.trim().length > 0;
@@ -31,9 +42,9 @@ const startOfDay = (date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 const getRoomPhotos = (room) => {
-  if (Array.isArray(room?.photoUrls)) return room.photoUrls;
-  if (Array.isArray(room?.photoFiles)) return room.photoFiles;
-  return [];
+  const photoUrls = Array.isArray(room?.photoUrls) ? room.photoUrls : [];
+  const photoFiles = Array.isArray(room?.photoFiles) ? room.photoFiles : [];
+  return [...photoUrls, ...photoFiles].filter(Boolean);
 };
 
 export const RoomValidator = {
@@ -120,6 +131,47 @@ export const RoomValidator = {
         message: "Carica almeno una foto della stanza.",
       });
     }
+
+    const occupancy = normalizeRoomOccupancy(
+      room?.occupancy || {},
+      room?.occupantIds || [],
+      availability
+    );
+    if (!isRoomOccupancyStatusValid(occupancy.status)) {
+      errors.push({
+        field: `${fieldPrefix}.occupancy.status`,
+        message: `Lo stato occupazione deve essere uno tra: ${ROOM_OCCUPANCY_VALUES.join(", ")}.`,
+      });
+    }
+
+    if (!Number.isInteger(occupancy.capacityTotal) || occupancy.capacityTotal <= 0) {
+      errors.push({
+        field: `${fieldPrefix}.occupancy.capacityTotal`,
+        message: "La capienza stanza deve essere almeno 1.",
+      });
+    }
+
+    if (
+      !Number.isInteger(occupancy.spotsOccupied) ||
+      occupancy.spotsOccupied < 0 ||
+      occupancy.spotsOccupied > occupancy.capacityTotal
+    ) {
+      errors.push({
+        field: `${fieldPrefix}.occupancy.spotsOccupied`,
+        message: "I posti occupati non possono superare la capienza.",
+      });
+    }
+
+    const consistencyIssues = getRoomOccupancyConsistencyIssues({
+      availability,
+      occupancy: room?.occupancy || {},
+    });
+    consistencyIssues.forEach((issue) => {
+      errors.push({
+        field: `${fieldPrefix}.${issue.field}`,
+        message: issue.message,
+      });
+    });
 
     return {
       isValid: errors.length === 0,

@@ -21,6 +21,7 @@ export default function TextAreaEditor({
   maxLength,
   showPreview = true,
   showCounter = true,
+  showExpandToggle = true,
   hasError = false,
   errorMessage = "",
   className = "",
@@ -63,13 +64,15 @@ export default function TextAreaEditor({
           {showCounter && (
             <span className="text-[11px] text-gray-400">{counterLabel}</span>
           )}
-          <button
-            type="button"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            className="text-[11px] px-2 py-1 rounded-full border border-[#228E8D] text-[#228E8D] hover:bg-[#228E8D] hover:text-white transition"
-          >
-            {isExpanded ? toggleCollapseLabel : toggleExpandLabel}
-          </button>
+          {showExpandToggle ? (
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              className="text-[11px] px-2 py-1 rounded-full border border-[#228E8D] text-[#228E8D] hover:bg-[#228E8D] hover:text-white transition"
+            >
+              {isExpanded ? toggleCollapseLabel : toggleExpandLabel}
+            </button>
+          ) : null}
         </div>
       </div>
 

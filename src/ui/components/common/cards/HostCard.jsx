@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import AvatarWithFallback from "@/ui/components/common/avatars/AvatarWithFallback";
 import RibbonBadge from "../badges/RibbonBadge";
 import { faCheck, faCity, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -6,7 +8,7 @@ import { formatDate } from "@/ui/helpers/formatDate";
 
 const HostCard = ({
   roleLabel = "Informazioni non presenti",
-  photoUrl = "/img/logo.svg",
+  photoUrl = "",
   img_profilo,
   displayName = "Informazioni non presenti",
   date,
@@ -14,7 +16,16 @@ const HostCard = ({
   userId,
   bgImg = true,
 }) => {
-  const resolvedPhoto = photoUrl || img_profilo || "/img/logo.svg";
+  const resolvedPhoto =
+    [photoUrl, img_profilo].find(
+      (value) => typeof value === "string" && value.trim(),
+    ) || "";
+  const [backgroundImageFailed, setBackgroundImageFailed] = useState(false);
+  useEffect(() => {
+    setBackgroundImageFailed(false);
+  }, [resolvedPhoto]);
+  const showBackgroundImage =
+    bgImg && Boolean(resolvedPhoto) && !backgroundImageFailed;
   const formattedDate = formatDate(date, "it-IT", {
     year: "numeric",
     month: "long",
@@ -29,11 +40,12 @@ const HostCard = ({
         icon={roleLabel === "Proprietario" ? faUser : faCity}
       />
       <div className="relative overflow-hidden rounded-[50px] border-[3.5px] p-0 border-[#228E8D]/20 dark:border-[#1F2937] shadow-md">
-        {bgImg && (
+        {showBackgroundImage && (
           <img
-            src={resolvedPhoto ?? "/img/logoFullColor.webp"}
+            src={resolvedPhoto}
             alt={displayName}
             className="absolute inset-0 object-cover -z-10 scale-110 opacity-100"
+            onError={() => setBackgroundImageFailed(true)}
           />
         )}
         <div
@@ -45,10 +57,13 @@ const HostCard = ({
         >
           <div className="flex flex-col items-start gap-3">
             <div className="relative">
-              <img
-                src={resolvedPhoto ?? "/img/logoFullColor.webp"}
+              <AvatarWithFallback
+                avatarUrl={resolvedPhoto}
+                name={displayName}
                 alt={displayName}
-                className="w-24 h-24 rounded-full border-2 border-[#228E8D] object-cover shadow-lg"
+                className="w-24 h-24 rounded-full border-2 border-[#228E8D] shadow-lg"
+                initialsClassName="text-3xl"
+                imageClassName="rounded-full"
               />
               {isVerified && (
                 <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-[#d4f1ef] to-[#58c6c2] flex items-center justify-center border-2 border-[#228E8D] shadow-md">

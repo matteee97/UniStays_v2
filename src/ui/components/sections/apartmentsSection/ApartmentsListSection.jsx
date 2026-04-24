@@ -9,6 +9,46 @@ import LocalStorageToggleButton from "@/ui/components/common/buttons/LocalStorag
 import { useUser } from "@clerk/clerk-react";
 import { HeartToggle } from "../../common";
 
+function ApartmentsListSkeleton({ detailedCard = true }) {
+  const cardCount = detailedCard ? 6 : 8;
+
+  return (
+    <div aria-hidden="true">
+      <div className="flex flex-col gap-4 sm:flex-row justify-between sm:items-center">
+        <div className="h-4 w-40 rounded-full bg-[#d4f1ef]/65" />
+        <div className="h-10 w-40 rounded-full bg-[#d4f1ef]/55" />
+      </div>
+
+      <div
+        className={`mt-6 grid ${
+          detailedCard
+            ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
+            : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
+        } gap-y-12 gap-x-3 w-full`}
+      >
+        {Array.from({ length: cardCount }).map((_, index) => (
+          <div
+            key={index}
+            className="overflow-hidden rounded-[32px] border border-[#d4f1ef] bg-white shadow-sm"
+          >
+            <div className="h-56 w-full bg-[#d4f1ef]/45" />
+            <div className="space-y-4 p-5">
+              <div className="h-4 w-24 rounded-full bg-[#d4f1ef]/60" />
+              <div className="h-6 w-3/4 rounded-full bg-[#d4f1ef]/50" />
+              <div className="h-4 w-full rounded-full bg-[#d4f1ef]/35" />
+              <div className="h-4 w-5/6 rounded-full bg-[#d4f1ef]/30" />
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="h-16 rounded-2xl bg-[#d4f1ef]/25" />
+                <div className="h-16 rounded-2xl bg-[#d4f1ef]/25" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ApartmentsListSection({
   app = [],
   showLoading = false,
@@ -54,6 +94,7 @@ export default function ApartmentsListSection({
   const countLabel = hasKnownTotalCount
     ? `${visibleCount} di ${totalCount} annunc${totalCount === 1 ? "io" : "i"}`
     : `${visibleCount}${allLoaded ? "" : "+"} annunc${visibleCount === 1 ? "io" : "i"}`;
+  const shouldShowInitialSkeleton = showLoading && app.length === 0 && !error;
 
   const handleClick = (app) => {
     const city = {
@@ -70,104 +111,110 @@ export default function ApartmentsListSection({
       }`}
     >
       {showLoading && <LoadingIcon />}
-      <div className="flex flex-col gap-4 sm:flex-row justify-between sm:items-center">
-        <p className="text-gray-700 text-sm opacity-70">
-          {countLabel}
-          {city && university && " a " + city + " - " + university}
-        </p>
-        <LocalStorageToggleButton
-          label="Vista dettagliata"
-          storageKey={storageKey}
-          value={detailedCard}
-          onChange={setDetailedCard}
-        />
-      </div>
-      {error && (
-        <Alert
-          title={"Errore, qualcosa è andato storto:"}
-          message={
-            "Ci dispiace ma la ricerca non ha prodotto risultati a causa di un errore."
-          }
-        />
-      )}
-      {!showLoading && app.length === 0 && !error && (
+      {shouldShowInitialSkeleton ? (
+        <ApartmentsListSkeleton detailedCard={detailedCard} />
+      ) : (
         <>
-          {filtersActive ? (
-            <EmptyResults
-              title={"Nessun risultato con i filtri attivi"}
-              subtitle={
-                "Prova ad allargare i filtri o prova a cercare annunci con altri criteri di ricerca."
-              }
-              onClearFilters={() => {
-                setActiveFilters(null);
-              }}
-            />
-          ) : (
-            <EmptyResults />
-          )}
-        </>
-      )}
-      <div
-        className={`grid ${
-          detailedCard
-            ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
-            : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
-        } gap-y-12 gap-x-3 w-full`}
-      >
-        {app.map((app) =>
-          detailedCard ? (
-            <ApartmentCard
-              key={app.id}
-              app={app}
-              onHover={() => setHoveredApartmentId(app.id)}
-              onHoverOut={() => setHoveredApartmentId(null)}
-              handleClick={handleClick}
-              userId={userId}
-              liked={favoritesIds?.has(app.id) || false}
-            />
-          ) : (
-            <SmallCard
-              key={app.id}
-              app={app}
-              onHover={() => setHoveredApartmentId(app.id)}
-              onHoverOut={() => setHoveredApartmentId(null)}
-              handleClick={handleClick}
-              showCity={showCity}
-              imageChildren={
-                favoritesIds && (
-                  <div className="absolute top-2 right-2 bg-white/50 dark:bg-[#0F1829]/50 backdrop-blur-sm border-[#d4f1ee]/60 dark:border-[#394354] border-2 rounded-full py-1 px-2">
-                    <HeartToggle
-                      userID={userId}
-                      app={app}
-                      liked={favoritesIds?.has(app.id) || false}
-                    />
-                  </div>
-                )
-              }
-            />
-          ),
-        )}
-      </div>
-      {!showLoading &&
-        app.length > 0 &&
-        !error &&
-        (hasKnownTotalCount
-          ? totalCount >= limit
-          : paginaCorrente > 1 || hasNextPage) && (
-          <div
-            className={`sm:sticky ${
-              !alwaysStickyNavigation && "sm:absolute"
-            } bottom-[3px] sm:bottom-[13px] left-0 w-full flex justify-center z-20`}
-          >
-            <PageNavigation
-              loadMore={loadMore}
-              numeroPagine={numeroPagine}
-              hasNextPage={hasNextPage}
-              setPaginaCorrente={setPaginaCorrente}
-              paginaCorrente={paginaCorrente}
+          <div className="flex flex-col gap-4 sm:flex-row justify-between sm:items-center">
+            <p className="text-gray-700 text-sm opacity-70">
+              {countLabel}
+              {city && university && " a " + city + " - " + university}
+            </p>
+            <LocalStorageToggleButton
+              label="Vista dettagliata"
+              storageKey={storageKey}
+              value={detailedCard}
+              onChange={setDetailedCard}
             />
           </div>
-        )}
+          {error && (
+            <Alert
+              title={"Errore, qualcosa è andato storto:"}
+              message={
+                "Ci dispiace ma la ricerca non ha prodotto risultati a causa di un errore."
+              }
+            />
+          )}
+          {!showLoading && app.length === 0 && !error && (
+            <>
+              {filtersActive ? (
+                <EmptyResults
+                  title={"Nessun risultato con i filtri attivi"}
+                  subtitle={
+                    "Prova ad allargare i filtri o prova a cercare annunci con altri criteri di ricerca."
+                  }
+                  onClearFilters={() => {
+                    setActiveFilters(null);
+                  }}
+                />
+              ) : (
+                <EmptyResults />
+              )}
+            </>
+          )}
+          <div
+            className={`grid ${
+              detailedCard
+                ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
+                : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
+            } gap-y-12 gap-x-3 w-full`}
+          >
+            {app.map((app) =>
+              detailedCard ? (
+                <ApartmentCard
+                  key={app.id}
+                  app={app}
+                  onHover={() => setHoveredApartmentId(app.id)}
+                  onHoverOut={() => setHoveredApartmentId(null)}
+                  handleClick={handleClick}
+                  userId={userId}
+                  liked={favoritesIds?.has(app.id) || false}
+                />
+              ) : (
+                <SmallCard
+                  key={app.id}
+                  app={app}
+                  onHover={() => setHoveredApartmentId(app.id)}
+                  onHoverOut={() => setHoveredApartmentId(null)}
+                  handleClick={handleClick}
+                  showCity={showCity}
+                  imageChildren={
+                    favoritesIds && (
+                      <div className="absolute top-2 right-2 bg-white/50 dark:bg-[#0F1829]/50 backdrop-blur-sm border-[#d4f1ee]/60 dark:border-[#394354] border-2 rounded-full py-1 px-2">
+                        <HeartToggle
+                          userID={userId}
+                          app={app}
+                          liked={favoritesIds?.has(app.id) || false}
+                        />
+                      </div>
+                    )
+                  }
+                />
+              ),
+            )}
+          </div>
+          {!showLoading &&
+            app.length > 0 &&
+            !error &&
+            (hasKnownTotalCount
+              ? totalCount >= limit
+              : paginaCorrente > 1 || hasNextPage) && (
+              <div
+                className={`sm:sticky ${
+                  !alwaysStickyNavigation && "sm:absolute"
+                } bottom-[3px] sm:bottom-[13px] left-0 w-full flex justify-center z-20`}
+              >
+                <PageNavigation
+                  loadMore={loadMore}
+                  numeroPagine={numeroPagine}
+                  hasNextPage={hasNextPage}
+                  setPaginaCorrente={setPaginaCorrente}
+                  paginaCorrente={paginaCorrente}
+                />
+              </div>
+            )}
+        </>
+      )}
     </div>
   );
 }

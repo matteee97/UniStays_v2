@@ -3,13 +3,32 @@ import { auth } from "@/infrastructure/firebase";
 const DEFAULT_TOKEN_ENDPOINT =
   import.meta.env.VITE_FIREBASE_TOKEN_ENDPOINT || "/api/firebase/token";
 
+const normalizeApiBaseUrl = (rawBaseUrl) => {
+  if (!rawBaseUrl || typeof rawBaseUrl !== "string") return "/api";
+  const trimmed = rawBaseUrl.trim().replace(/\/$/, "");
+  if (!trimmed) return "/api";
+
+  if (trimmed.endsWith("/api")) return trimmed;
+  if (trimmed.endsWith("/firebase/token")) {
+    return trimmed.replace(/\/firebase\/token$/, "");
+  }
+
+  // Cloud Functions URL often arrives as ...cloudfunctions.net/<functionName>
+  // while backend routes are mounted under /api.
+  if (/cloudfunctions\.net\/[^/]+$/i.test(trimmed)) {
+    return `${trimmed}/api`;
+  }
+
+  return trimmed;
+};
+
 const resolveApiBaseUrl = () => {
   const explicitBase = import.meta.env.VITE_BACKEND_API_BASE_URL;
   if (explicitBase && typeof explicitBase === "string") {
-    return explicitBase.replace(/\/$/, "");
+    return normalizeApiBaseUrl(explicitBase);
   }
 
-  return DEFAULT_TOKEN_ENDPOINT.replace(/\/firebase\/token\/?$/, "");
+  return normalizeApiBaseUrl(DEFAULT_TOKEN_ENDPOINT);
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -48,6 +67,16 @@ const resolveAuthHeader = async (requireAuth) => {
   };
 };
 
+export class BackendApiError extends Error {
+  constructor(message, { status = 0, path = "", url = "" } = {}) {
+    super(message || "Errore API");
+    this.name = "BackendApiError";
+    this.status = Number(status) || 0;
+    this.path = path;
+    this.url = url;
+  }
+}
+
 /**
  * Calls UniStays backend API mounted under Cloud Functions `/api` base.
  *
@@ -63,8 +92,9 @@ export async function callBackendApi(
   { method = "GET", body, requireAuth = true, headers = {} } = {}
 ) {
   const authHeader = await resolveAuthHeader(requireAuth);
+  const url = buildUrl(path);
 
-  const response = await fetch(buildUrl(path), {
+  const response = await fetch(url, {
     method,
     headers: {
       ...(body ? { "Content-Type": "application/json" } : {}),
@@ -75,7 +105,11 @@ export async function callBackendApi(
   });
 
   if (!response.ok) {
-    throw new Error(await toErrorMessage(response));
+    throw new BackendApiError(await toErrorMessage(response), {
+      status: response.status,
+      path,
+      url,
+    });
   }
 
   if (response.status === 204) {

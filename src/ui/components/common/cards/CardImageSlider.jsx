@@ -129,6 +129,7 @@ export default function CardImageSlider({
             className={`hidden sm:block ${
               !onStart ? (hover ? "opacity-90" : "opacity-0") : "opacity-0"
             } left-2 py-1 h-9 w-6 hover:opacity-100 z-30`}
+            glassEffect={false}
           >
             &#10094;
           </PrevButton>
@@ -142,6 +143,7 @@ export default function CardImageSlider({
             className={`hidden sm:block ${
               hover ? "opacity-90" : "opacity-0"
             } right-2 py-1 h-9 w-6 hover:opacity-100 z-30`}
+            glassEffect={false}
           >
             &#10095;
           </NextButton>

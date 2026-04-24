@@ -8,7 +8,6 @@ import { useUser } from "@clerk/clerk-react";
 import { removeAnnuncio } from "@/infrastructure/firebase/adapters/annunci";
 import { canUpdateApartment } from "@/core/policies/canUpdateApartment.policy";
 import { showCannotUpdateApartmentToast } from "@/ui/helpers/apartmentUpdateToast";
-import ActionLabel from "../../indicators/ActionLabel";
 
 export default function AnnuncioActions({
   annuncio,

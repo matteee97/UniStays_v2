@@ -73,7 +73,22 @@ const registerApartmentRoutes = ({
         uid: req.firebaseUser.uid,
         claims: req.firebaseUser,
         roomUpdates: req.body?.roomUpdates || [],
-        aggregates: req.body?.aggregates,
+      });
+
+      res.json(payload);
+    })
+  );
+
+  app.patch(
+    "/v1/apartments/:apartmentId/occupants",
+    requireFirebaseAuth,
+    asyncHandler(async (req, res) => {
+      const payload = await apartmentsService.updateApartmentOccupants({
+        apartmentId: req.params.apartmentId,
+        uid: req.firebaseUser.uid,
+        claims: req.firebaseUser,
+        occupantUpserts: req.body?.occupantUpserts || [],
+        occupantDeletes: req.body?.occupantDeletes || [],
       });
 
       res.json(payload);

@@ -56,6 +56,7 @@ import { forwardRef } from "react";
  * @property {Partial<GlassPresetConfig>} [presetOverrides] Per-slot preset overrides.
  * @property {GlassDistortionLevel} [distortion="medium"] Peripheral refraction intensity.
  * @property {boolean} [disableDistortion=false] Force-disable refraction layer.
+ * @property {boolean} [disableEffects=false] Disable expensive glass effects while keeping the base layout API unchanged.
  * @property {string} [distortionMask] Custom CSS mask image for distortion layers (advanced).
  * @property {GlassRadius} [radius="2xl"] Radius token shared by all layers.
  * @property {GlassLayerClassNames} [layerClassNames] Per-layer class overrides.
@@ -107,8 +108,7 @@ export const GLASS_PRESETS = Object.freeze({
     highlights:
       "bg-[linear-gradient(180deg,rgba(255,255,255,0.3)_0%,rgba(255,255,255,0.08)_28%,transparent_58%),linear-gradient(145deg,rgba(255,255,255,0.12),transparent_42%,rgba(255,255,255,0.08)_76%)] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.03)_30%,transparent_60%),linear-gradient(145deg,rgba(255,255,255,0.06),transparent_44%,rgba(255,255,255,0.04)_80%)]",
     border: "border border-white/18 dark:border-white/8",
-    innerRim:
-      "border border-[#ffffff10] dark:border-[#ffffff05] blur-[0.5px]",
+    innerRim: "border border-[#ffffff10] dark:border-[#ffffff05] blur-[0.5px]",
   }),
   subtle: Object.freeze({
     surface:
@@ -139,8 +139,10 @@ export const GLASS_DISTORTION_PROFILES = Object.freeze({
     innerRingPx: 18,
     outerClasses: "opacity-90 bg-white/[0.02]",
     innerClasses: "opacity-70 bg-white/[0.01]",
-    outerBackdropFilter: "blur(14px) saturate(145%) contrast(116%) brightness(1.05)",
-    innerBackdropFilter: "blur(8px) saturate(125%) contrast(108%) brightness(1.03)",
+    outerBackdropFilter:
+      "blur(14px) saturate(145%) contrast(116%) brightness(1.05)",
+    innerBackdropFilter:
+      "blur(8px) saturate(125%) contrast(108%) brightness(1.03)",
     causticsOpacity: "opacity-40",
   }),
   medium: Object.freeze({
@@ -148,22 +150,27 @@ export const GLASS_DISTORTION_PROFILES = Object.freeze({
     innerRingPx: 14,
     outerClasses: "opacity-100 bg-white/[0.02]",
     innerClasses: "opacity-30 dark:opacity-80 bg-white/[0.01]",
-    outerBackdropFilter: "blur(32px) saturate(125%) contrast(116%) brightness(1.08)",
-    innerBackdropFilter: "blur(2px) saturate(105%) contrast(108%) brightness(1.03)",
+    outerBackdropFilter:
+      "blur(32px) saturate(125%) contrast(116%) brightness(1.08)",
+    innerBackdropFilter:
+      "blur(2px) saturate(105%) contrast(108%) brightness(1.03)",
     causticsOpacity: "opacity-15",
   }),
   strong: Object.freeze({
-    outerRingPx: 16,
-    innerRingPx: 30,
+    outerRingPx: 8,
+    innerRingPx: 22,
     outerClasses: "opacity-100 bg-white/[0.03]",
-    innerClasses: "opacity-85 bg-white/[0.02]",
-    outerBackdropFilter: "blur(30px) saturate(130%) contrast(118%) brightness(1.1)",
-    innerBackdropFilter: "blur(16px) saturate(110%) contrast(110%) brightness(1.05)",
-    causticsOpacity: "opacity-70",
+    innerClasses: "opacity-45 bg-white/[0.02]",
+    outerBackdropFilter:
+      "blur(30px) saturate(130%) contrast(118%) brightness(1.1)",
+    innerBackdropFilter:
+      "blur(16px) saturate(110%) contrast(110%) brightness(1.05)",
+    causticsOpacity: "opacity-10",
   }),
 });
 
-const getRadiusClass = (radius) => RADIUS_CLASSES[radius] || RADIUS_CLASSES["2xl"];
+const getRadiusClass = (radius) =>
+  RADIUS_CLASSES[radius] || RADIUS_CLASSES["2xl"];
 const getInnerRadiusClass = (radius) =>
   INNER_RIM_RADIUS_CLASSES[radius] || INNER_RIM_RADIUS_CLASSES["2xl"];
 
@@ -172,7 +179,26 @@ const buildBackdropFilterStyle = (backdropFilter = "") => ({
   backdropFilter,
 });
 
-const buildRingMaskStyle = ({
+/**
+ * Removes the utility classes that trigger expensive backdrop/filter work.
+ * This is used as a performance fallback for scroll-heavy containers.
+ *
+ * @param {string} classNames
+ * @returns {string}
+ */
+const stripExpensiveEffectClasses = (classNames = "") =>
+  classNames
+    .split(/\s+/)
+    .filter(
+      (token) =>
+        token &&
+        !token.includes("backdrop-blur") &&
+        !token.includes("blur-[") &&
+        token !== "blur",
+    )
+    .join(" ") + " bg-[#f0fafa] -z-10";
+
+export const buildRingMaskStyle = ({
   ringWidthPx = 0,
   backdropFilter = "",
   customMask = "",
@@ -190,7 +216,8 @@ const buildRingMaskStyle = ({
   return {
     ...base,
     padding: `${ringWidthPx}px`,
-    WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+    WebkitMask:
+      "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
     WebkitMaskComposite: "xor",
     maskComposite: "exclude",
   };
@@ -211,6 +238,7 @@ const GlassContainer = forwardRef(
       presetOverrides = {},
       distortion = "medium",
       disableDistortion = false,
+      disableEffects = false,
       distortionMask,
       radius = "2xl",
       layerClassNames = {},
@@ -228,10 +256,17 @@ const GlassContainer = forwardRef(
       ...basePreset,
       ...presetOverrides,
     };
+    const resolvedSurfaceClassName = disableEffects
+      ? stripExpensiveEffectClasses(resolvedPreset.surface)
+      : resolvedPreset.surface;
+    const resolvedInnerRimClassName = disableEffects
+      ? stripExpensiveEffectClasses(resolvedPreset.innerRim)
+      : resolvedPreset.innerRim;
 
     const distortionProfile =
       distortion !== "none" ? GLASS_DISTORTION_PROFILES[distortion] : null;
-    const shouldRenderDistortion = !disableDistortion && Boolean(distortionProfile);
+    const shouldRenderDistortion =
+      !disableEffects && !disableDistortion && Boolean(distortionProfile);
     const outerDistortionStyle = distortionProfile
       ? buildRingMaskStyle({
           ringWidthPx: distortionProfile.outerRingPx,
@@ -255,69 +290,71 @@ const GlassContainer = forwardRef(
 
     return (
       <div className={clsx("relative", radiusClass, layerClassNames.root)}>
-        <div
-          className={clsx(
-            "pointer-events-none absolute inset-0 overflow-hidden",
-            radiusClass,
-            layerClassNames.overlay,
-          )}
-        >
-          {shouldRenderDistortion ? (
-            <div
-              className={clsx(
-                "absolute inset-0",
-                radiusClass,
-                distortionProfile.outerClasses,
-                layerClassNames.edgeDistortion,
-              )}
-              style={outerDistortionStyle}
-            />
-          ) : null}
-
-          {shouldRenderDistortion ? (
-            <div
-              className={clsx(
-                "absolute inset-0",
-                radiusClass,
-                distortionProfile.innerClasses,
-                layerClassNames.edgeDistortion,
-              )}
-              style={innerDistortionStyle}
-            />
-          ) : null}
-
-          {shouldRenderDistortion ? (
-            <div
-              className={clsx(
-                "absolute inset-0",
-                radiusClass,
-                distortionProfile.causticsOpacity,
-                "bg-[radial-gradient(130%_80%_at_2%_50%,rgba(255,255,255,0.55),transparent_40%),radial-gradient(130%_80%_at_98%_50%,rgba(255,255,255,0.5),transparent_38%),radial-gradient(130%_95%_at_50%_-10%,rgba(255,255,255,0.45),transparent_45%),radial-gradient(120%_90%_at_50%_112%,rgba(255,255,255,0.28),transparent_45%)]",
-                "dark:bg-[radial-gradient(130%_80%_at_2%_50%,rgba(255,255,255,0.22),transparent_40%),radial-gradient(130%_80%_at_98%_50%,rgba(255,255,255,0.2),transparent_38%),radial-gradient(130%_95%_at_50%_-10%,rgba(255,255,255,0.18),transparent_45%),radial-gradient(120%_90%_at_50%_112%,rgba(255,255,255,0.12),transparent_45%)]",
-                layerClassNames.edgeCaustics,
-              )}
-              style={causticsStyle}
-            />
-          ) : null}
-
+        {!disableEffects ? (
           <div
             className={clsx(
-              "absolute inset-0",
+              "pointer-events-none absolute inset-0 overflow-hidden",
               radiusClass,
-              resolvedPreset.highlights,
-              layerClassNames.highlights,
+              layerClassNames.overlay,
             )}
-          />
+          >
+            {shouldRenderDistortion ? (
+              <div
+                className={clsx(
+                  "absolute inset-0",
+                  radiusClass,
+                  distortionProfile.outerClasses,
+                  layerClassNames.edgeDistortion,
+                )}
+                style={outerDistortionStyle}
+              />
+            ) : null}
 
-          <div
-            className={clsx(
-              "absolute inset-0",
-              radiusClass,
-              resolvedPreset.border,
-              layerClassNames.border,
-            )}
-          />
-        </div>
+            {shouldRenderDistortion ? (
+              <div
+                className={clsx(
+                  "absolute inset-0",
+                  radiusClass,
+                  distortionProfile.innerClasses,
+                  layerClassNames.edgeDistortion,
+                )}
+                style={innerDistortionStyle}
+              />
+            ) : null}
+
+            {shouldRenderDistortion ? (
+              <div
+                className={clsx(
+                  "absolute inset-0",
+                  radiusClass,
+                  distortionProfile.causticsOpacity,
+                  "bg-[radial-gradient(130%_80%_at_2%_50%,rgba(255,255,255,0.55),transparent_40%),radial-gradient(130%_80%_at_98%_50%,rgba(255,255,255,0.5),transparent_38%),radial-gradient(130%_95%_at_50%_-10%,rgba(255,255,255,0.45),transparent_45%),radial-gradient(120%_90%_at_50%_112%,rgba(255,255,255,0.28),transparent_45%)]",
+                  "dark:bg-[radial-gradient(130%_80%_at_2%_50%,rgba(255,255,255,0.22),transparent_40%),radial-gradient(130%_80%_at_98%_50%,rgba(255,255,255,0.2),transparent_38%),radial-gradient(130%_95%_at_50%_-10%,rgba(255,255,255,0.18),transparent_45%),radial-gradient(120%_90%_at_50%_112%,rgba(255,255,255,0.12),transparent_45%)]",
+                  layerClassNames.edgeCaustics,
+                )}
+                style={causticsStyle}
+              />
+            ) : null}
+
+            <div
+              className={clsx(
+                "absolute inset-0",
+                radiusClass,
+                resolvedPreset.highlights,
+                layerClassNames.highlights,
+              )}
+            />
+
+            <div
+              className={clsx(
+                "absolute inset-0",
+                radiusClass,
+                resolvedPreset.border,
+                layerClassNames.border,
+              )}
+            />
+          </div>
+        ) : null}
 
         <div className="relative z-10">
           <div
@@ -325,7 +362,7 @@ const GlassContainer = forwardRef(
             className={clsx(
               "relative",
               radiusClass,
-              resolvedPreset.surface,
+              resolvedSurfaceClassName,
               layerClassNames.surface,
               className,
             )}
@@ -335,7 +372,7 @@ const GlassContainer = forwardRef(
               className={clsx(
                 "pointer-events-none absolute inset-[3px_4px] -z-1",
                 innerRadiusClass,
-                resolvedPreset.innerRim,
+                resolvedInnerRimClassName,
                 layerClassNames.innerRim,
               )}
             />

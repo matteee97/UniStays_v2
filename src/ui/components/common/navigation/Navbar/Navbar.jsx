@@ -71,11 +71,19 @@ export default function NavBar({ visibleAt = 140, setScrollToTop }) {
 
   return (
     <div className="relative">
+      <div
+        className="absolute inset-0 bg-transparent backdrop-blur-2xl "
+        style={{
+          WebkitMaskImage:
+            "linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.8)), rgba(0, 0, 0, 0))",
+        }}
+      />
+
       <header
         className={
           HEADER_BASE_CLASS +
           (shouldShowNav
-            ? " -translate-y-0 opacity-100 "
+            ? " -translate-y-0 opacity-100"
             : " translate-y-[95%] sm:-translate-y-full ") +
           (isApartmentDetailPage ? " hidden sm:block " : "") +
           (isApartmentsListingPage ? " sm:!p-0 " : "")

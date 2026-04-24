@@ -10,6 +10,12 @@ File coinvolti: `src/ui/pages/Apartment.jsx`, `src/ui/hooks/fetches/useFetchApar
 La UI e' suddivisa in sezioni riusabili (hero, galleria immagini, info, regole, dotazioni, host info, stats). La sezione "Dove dormirai" mostra le stanze con card e modale di dettaglio. La form di booking e' sticky su desktop e richiede la selezione stanza quando ce ne sono piu' di una.
 File coinvolti: `src/ui/components/sections/apartmentSection`, `src/ui/components/common/form/BookingForm.jsx`, `src/ui/components/sections/apartmentSection/ImageGallery.jsx`, `src/ui/components/sections/apartmentSection/ApartmentHero.jsx`, `src/ui/components/sections/apartmentSection/ApartmentInfo.jsx`, `src/ui/components/sections/apartmentSection/RoomPreviewSection.jsx`
 
+## Roommate discovery (occupants)
+
+La pagina dettaglio include la sezione "Chi vive gia qui", alimentata da `apartments/{apartmentId}/occupants` (solo record pubblicabili con consenso esplicito).  
+La sezione visualizza card coinquilino con snapshot lifestyle (tag, interessi, lingue, presenza in casa), evitando di esporre dati privati.
+File coinvolti: `src/ui/components/sections/apartmentSection/OccupantsSection.jsx`, `src/ui/hooks/fetches/useFetchApartment.js`, `src/infrastructure/firebase/repositories/FirestoreOccupantRepository.js`
+
 ## Recensioni e feedback
 
 Le recensioni vengono lette da subcollection `reviews`, con supporto a risposte. Le azioni di like/reply aggiornano contatori nel documento review.

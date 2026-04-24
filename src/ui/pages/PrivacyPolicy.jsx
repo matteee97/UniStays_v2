@@ -90,6 +90,11 @@ export default function PrivacyPolicyPage() {
             Dati analytics: metriche aggregate della piattaforma e degli
             annunci.
           </li>
+          <li>
+            Preferenze tecniche e di consenso: scelte relative a tema,
+            preferenze interfaccia e categorie cookie opzionali abilitate o
+            rifiutate.
+          </li>
         </ul>
       </section>
 
@@ -113,8 +118,14 @@ export default function PrivacyPolicyPage() {
             esecuzione di misure precontrattuali o legittimo interesse.
           </li>
           <li>
-            Analisi statistiche tramite cookie e strumenti assimilabili:
-            consenso dell&apos;utente quando richiesto dalla normativa.
+            Analisi statistiche con Google Analytics 4: consenso
+            dell&apos;utente, quando richiesto dalla normativa e secondo le
+            preferenze espresse nel pannello cookie.
+          </li>
+          <li>
+            Visualizzazione di Google Maps e contenuti esterni collegati:
+            consenso o richiesta esplicita di caricamento della mappa da parte
+            dell&apos;utente.
           </li>
           <li>
             Adempimenti normativi, fiscali e richieste dell&apos;autorita&apos;:
@@ -159,6 +170,10 @@ export default function PrivacyPolicyPage() {
           <li>
             Dati analytics/cookie: secondo i tempi definiti dai singoli
             strumenti e dalle preferenze di consenso.
+          </li>
+          <li>
+            Preferenze cookie: fino a 6 mesi dalla registrazione della scelta,
+            salvo revoca o rinnovo anticipato.
           </li>
         </ul>
       </section>
@@ -238,7 +253,8 @@ export default function PrivacyPolicyPage() {
           <Link className="text-[#228E8D] underline" to={ROUTES.COOKIE_POLICY}>
             Cookie Policy
           </Link>
-          .
+          . Le preferenze possono essere aggiornate in qualsiasi momento tramite
+          il link &quot;Preferenze Cookie&quot; presente nel footer del sito.
         </p>
       </section>
     </LegalPageLayout>

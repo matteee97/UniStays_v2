@@ -12,6 +12,16 @@ File coinvolti: `src/ui/pages/Apartments.jsx`, `src/app/routes/index.js`
 La lista usa query Firestore con paginazione incrementale e cache in Redux. `useFetchAppartamenti` gestisce reset quando cambiano i filtri e carica pagine tramite repository dedicato.
 File coinvolti: `src/ui/hooks/fetches/useFetchAppartamenti.js`, `src/infrastructure/firebase/repositories/FirestoreApartmentRepository.js`, `src/app/store/slices/appartamentiSlice.jsx`, `src/ui/pages/Apartments.jsx`
 
+## Snapshot coinquilini in card
+
+Le card annuncio mostrano uno snapshot leggero di roommate discovery (`occupantListingSnapshot`):
+- numero coinquilini visibili;
+- max 2 avatar;
+- top tag lifestyle.
+
+Lo snapshot e' calcolato lato backend in modo denormalizzato, senza query profonde su subcollection durante il listing.
+File coinvolti: `src/ui/components/common/cards/ApartmentCard.jsx`, `functions/src/modules/apartments/apartmentsService.js`
+
 ## Filtri e ordinamento
 I filtri sono organizzati in sezioni UX friendly (Budget, Distanza, Stanze e spazi, Disponibilita, Servizi). La distanza usa le coordinate degli alloggi rispetto all'universita (formula Haversine) e viene calcolata lato client; anche i range numerici (prezzo, camere, bagni, superficie) vengono applicati lato client.
 File coinvolti: `src/ui/components/sections/apartmentsSection/filters/components/Filters.jsx`, `src/ui/components/common/search/SearchTray/index.jsx`, `src/ui/hooks/apartments/useApartmentsPage.js`

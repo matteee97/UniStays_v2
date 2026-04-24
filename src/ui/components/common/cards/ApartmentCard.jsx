@@ -21,6 +21,18 @@ export default function ApartmentCard({
   userId,
   liked,
 }) {
+  const toInitials = (value = "") => {
+    const parts = String(value)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!parts.length) return "U";
+    return parts
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("");
+  };
+
   const highlights = useMemo(
     () => [
       {
@@ -54,6 +66,14 @@ export default function ApartmentCard({
   );
 
   const priceLabel = getPriceRangeLabel(app.aggregates, true);
+  const roommateSnapshot = app.occupantListingSnapshot || {};
+  const visibleRoommates = Number(roommateSnapshot.visibleOccupantsCount) || 0;
+  const roommateItems = Array.isArray(roommateSnapshot.items)
+    ? roommateSnapshot.items.slice(0, 2)
+    : [];
+  const topTags = Array.isArray(roommateSnapshot.topTags)
+    ? roommateSnapshot.topTags.slice(0, 2)
+    : [];
 
   return (
     <div className="space-y-2 w-full max-w-full touch-pan-y">
@@ -103,6 +123,48 @@ export default function ApartmentCard({
         <p className="text-[13px] text-gray-400 line-clamp-2 w-full">
           {app.description}
         </p>
+        {visibleRoommates > 0 && (
+          <div className="flex items-center gap-2 pt-1 text-xs text-gray-500">
+            <div className="flex -space-x-2">
+              {roommateItems.length
+                ? roommateItems.map((item, index) =>
+                    item?.avatarUrl ? (
+                      <img
+                        key={`${item.avatarUrl}-${index}`}
+                        src={item.avatarUrl}
+                        alt={item.displayName || ""}
+                        className="h-6 w-6 rounded-full border-2 border-white object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span
+                        key={`${item.initials || "u"}-${index}`}
+                        className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[9px] font-bold text-white shadow-sm ${
+                          index % 2 === 0
+                            ? "bg-gradient-to-br from-[#1f6f7a] to-[#79d7d2]"
+                            : "bg-gradient-to-br from-[#a14f6c] to-[#ffd37b]"
+                        }`}
+                      >
+                        {item.initials || toInitials(item.displayName)}
+                      </span>
+                    ),
+                  )
+                : (roommateSnapshot.avatarUrls || []).slice(0, 2).map((avatarUrl, index) => (
+                    <img
+                      key={`${avatarUrl}-${index}`}
+                      src={avatarUrl}
+                      alt=""
+                      className="h-6 w-6 rounded-full border-2 border-white object-cover"
+                      loading="lazy"
+                    />
+                  ))}
+            </div>
+            <span className="line-clamp-1">
+              {visibleRoommates} coinquilin{visibleRoommates === 1 ? "o" : "i"}
+              {topTags.length ? ` · ${topTags.join(", ")}` : ""}
+            </span>
+          </div>
+        )}
       </div>
       <div className="px-3 flex flex-col gap-3">
         <div className="flex text-sm w-full text-gray-400 items-center justify-between gap-2 px-1">

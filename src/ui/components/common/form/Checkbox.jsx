@@ -23,10 +23,10 @@ const Checkbox = forwardRef(
         className={clsx(
           "flex group items-center gap-3 justify-between border-2 px-2.5 py-1.5 text-gray-700 cursor-pointer select-none transition-colors",
           checked
-            ? "bg-[#228E8D]/60 dark:bg-[#228E8D]/20 border-[#228E8D]/80 dark:border-[#228E8D]/40"
+            ? "bg-[#228E8D]/80 dark:bg-[#228E8D]/20 border-[#228E8D]/80 dark:border-[#228E8D]/40"
             : "bg-[#f0fafb] dark:bg-[#0B1220] border-[#d4f1ef]",
           description ? "rounded-2xl" : "rounded-full",
-          disabled && "opacity-60 cursor-not-allowed",
+          disabled && "opacity-80 cursor-not-allowed",
           className,
         )}
       >

@@ -1,4 +1,12 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import {
+  lazy,
+  Suspense,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
@@ -7,9 +15,11 @@ import EmptyResults from "@/ui/components/common/messages/EmptyResults";
 import BookingForm from "@/ui/components/common/form/BookingForm";
 import {
   useFetchApartment,
+  useFetchApartmentRooms,
   useSocialLinks,
   useWindowWidth,
   useFetchRecensioni,
+  useDeferredInView,
   useInView,
 } from "@/ui/hooks";
 import MetaManager from "@/ui/components/common/seo/MetaManager";
@@ -19,27 +29,82 @@ import {
   ApartmentHero,
   ApartmentInfo,
   ImageGallery,
-  OwnerInfoSection,
-  ApartmentFeedbackSection,
-  ApartmentExtraFeatures,
 } from "@/ui/components/sections/apartmentSection";
 import { useNavigate } from "react-router-dom";
 import { isValidFirestoreId } from "@/ui/helpers/validation";
 import { formatDate } from "@/ui/helpers/formatDate";
 import { createBookingKey, encodeChatPayload } from "@/ui/helpers/chatPayload";
 import { USER_ROLES } from "@/shared/types";
+
+const LazyOwnerInfoSection = lazy(
+  () => import("@/ui/components/sections/apartmentSection/OwnerInfoSection"),
+);
+const LazyApartmentFeedbackSection = lazy(
+  () =>
+    import("@/ui/components/sections/apartmentSection/ApartmentFeedbackSection"),
+);
+const LazyApartmentExtraFeatures = lazy(
+  () =>
+    import("@/ui/components/sections/apartmentSection/ApartmentExtraFeatures"),
+);
+
+const ROOM_TYPE_LABELS = {
+  single: "Singola",
+  double: "Doppia",
+  entire_apartment: "Intero appartamento",
+};
+
+function SectionCardSkeleton({ className = "" }) {
+  return (
+    <div
+      className={`rounded-2xl border border-[#d4f1ef] bg-white p-6 ${className}`}
+      aria-hidden="true"
+    >
+      <div className="h-5 w-40 rounded-full bg-[#d4f1ef]/70" />
+      <div className="mt-4 space-y-3">
+        <div className="h-4 w-full rounded-full bg-[#d4f1ef]/50" />
+        <div className="h-4 w-5/6 rounded-full bg-[#d4f1ef]/40" />
+        <div className="h-4 w-2/3 rounded-full bg-[#d4f1ef]/30" />
+      </div>
+    </div>
+  );
+}
+
+function ApartmentPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#F0FAF9] via-white to-[#F0FAF9] dark:from-[#0F172A] dark:via-[#0F172A] dark:to-[#0F172A]">
+      <div className="mx-auto max-w-[1340px] 2xl:max-w-[1500px] px-4 py-6 sm:py-8">
+        <div className="h-10 w-2/3 rounded-full bg-[#d4f1ef]/70" />
+        <div className="mt-6 h-[320px] rounded-[28px] bg-[#d4f1ef]/45 sm:h-[520px]" />
+        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <SectionCardSkeleton />
+            <SectionCardSkeleton />
+            <SectionCardSkeleton />
+          </div>
+          <div className="hidden lg:block">
+            <SectionCardSkeleton className="sticky top-24" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ApartmentPage() {
   const { apartmentId } = useParams();
   const { user } = useUser();
   const userID = user?.id;
   const [startDate, setStartDate] = useState(null);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [forceLoadRooms, setForceLoadRooms] = useState(false);
 
   const navigationLinks = useMemo(
     () => [
       { id: "section-foto", label: "Foto" },
       { id: "section-caratteristiche", label: "Caratteristiche" },
       { id: "section-stanze", label: "Stanze" },
+      { id: "section-roommates", label: "Coinquilini" },
       { id: "section-posizione", label: "Posizione" },
     ],
     [],
@@ -48,6 +113,22 @@ export default function ApartmentPage() {
   const navigate = useNavigate();
   const width = useWindowWidth();
   const [ref, isVisible] = useInView({ threshold: 0.05 });
+  const [ownerSectionRef, shouldLoadOwnerSection] = useDeferredInView({
+    threshold: 0.01,
+    rootMargin: "280px 0px",
+  });
+  const [feedbackSectionRef, shouldLoadFeedbackSection] = useDeferredInView({
+    threshold: 0.01,
+    rootMargin: "320px 0px",
+  });
+  const [extraSectionRef, shouldLoadExtraSection] = useDeferredInView({
+    threshold: 0.01,
+    rootMargin: "320px 0px",
+  });
+  const [roomsDataRef, shouldLoadRoomsData] = useDeferredInView({
+    threshold: 0.01,
+    rootMargin: "520px 0px",
+  });
 
   const pdfRef = useRef(null);
   const sanitizedApartmentId = useMemo(
@@ -56,24 +137,39 @@ export default function ApartmentPage() {
   );
   const invalidApartmentId = Boolean(apartmentId && !sanitizedApartmentId);
 
-  const { app, liked, setLiked } = useFetchApartment(
+  const {
+    app,
+    liked,
+    setLiked,
+    loading: apartmentLoading,
+  } = useFetchApartment(sanitizedApartmentId, userID);
+  const shouldFetchRooms = Boolean(
+    sanitizedApartmentId && (shouldLoadRoomsData || forceLoadRooms),
+  );
+  const { rooms, loading: roomsLoading } = useFetchApartmentRooms(
     sanitizedApartmentId,
-    userID,
+    shouldFetchRooms,
   );
   const owner = app?.owner || app?.ownerSnapshot || null;
   const ownerId = owner?.ownerId || null;
-  const rooms = app?.rooms || [];
-  const ROOM_TYPE_LABELS = {
-    single: "Singola",
-    double: "Doppia",
-    entire_apartment: "Intero appartamento",
-  };
   const getRoomKey = useCallback(
     (room, index) => room?.roomId || room?.id || `room-${index}`,
     [],
   );
-  // Fetch recensioni usando l'hook personalizzato
-  const { recensioni, loading } = useFetchRecensioni(app?.id, true); //TODO: logica lazy loading
+  const apartmentViewModel = useMemo(
+    () =>
+      app
+        ? {
+            ...app,
+            rooms,
+          }
+        : null,
+    [app, rooms],
+  );
+  const { recensioni, loading: reviewsLoading } = useFetchRecensioni(
+    apartmentViewModel?.id,
+    shouldLoadFeedbackSection,
+  );
 
   // Calcola statistiche
   const stats = useMemo(() => {
@@ -152,11 +248,17 @@ export default function ApartmentPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setForceLoadRooms(true);
     if (userID === ownerId) {
       toast.error("Non puoi contattare te stesso");
       return;
     }
     if (!startDate) return toast.warning("Seleziona una data");
+
+    if (roomsLoading) {
+      toast.info("Caricamento stanze in corso, riprova tra poco.");
+      return;
+    }
 
     if (rooms.length > 1 && !selectedRoomInfo) {
       toast.error("Seleziona una stanza");
@@ -181,12 +283,12 @@ export default function ApartmentPage() {
     });
     const roomLabel = selectedRoomInfo?.label || "una stanza";
     const reason = `Richiesta di prenotazione per ${roomLabel} a partire dal ${dateStr}`;
-    const message = `Buongiorno, sono interessato alla ${roomLabel} del suo appartamento "${app.title}", \nPotrebbe fornirmi maggiori informazioni sulla disponibilità? `;
+    const message = `Buongiorno, sono interessato alla ${roomLabel} del suo appartamento "${apartmentViewModel?.title}", \nPotrebbe fornirmi maggiori informazioni sulla disponibilità? `;
     const payload = {
       type: "booking-preview",
       content: message,
       meta: {
-        title: app.title || null,
+        title: apartmentViewModel?.title || null,
         date: dateStr,
         roomId: selectedRoomInfo?.key || null,
         roomLabel: selectedRoomInfo?.label || null,
@@ -195,7 +297,9 @@ export default function ApartmentPage() {
         reason,
         source: "booking-form",
         previewImage:
-          selectedRoomInfo?.image || app.apartmentPhotoUrls?.[0] || null,
+          selectedRoomInfo?.image ||
+          apartmentViewModel?.apartmentPhotoUrls?.[0] ||
+          null,
         bookingKey: createBookingKey({
           userId: userID,
           hostId: ownerId,
@@ -219,7 +323,10 @@ export default function ApartmentPage() {
     );
   };
 
-  const apartmentImages = useMemo(() => app?.apartmentPhotoUrls || [], [app]);
+  const apartmentImages = useMemo(
+    () => apartmentViewModel?.apartmentPhotoUrls || [],
+    [apartmentViewModel],
+  );
   const images = useMemo(() => {
     const roomImages = rooms.flatMap((room) => room.photoUrls || []);
     return [...apartmentImages, ...roomImages];
@@ -245,22 +352,24 @@ export default function ApartmentPage() {
 
   return (
     <>
-      {app && (
+      {apartmentViewModel && (
         <MetaManager
-          title={app.title}
-          description={app.description}
-          image={app.apartmentPhotoUrls?.[0]}
+          title={apartmentViewModel.title}
+          description={apartmentViewModel.description}
+          image={apartmentViewModel.apartmentPhotoUrls?.[0]}
           url={`/annuncio/${apartmentId}`}
         />
       )}
 
-      {app === null ? (
+      {apartmentLoading && !apartmentViewModel ? (
+        <ApartmentPageSkeleton />
+      ) : apartmentViewModel === null ? (
         <EmptyResults />
       ) : (
         <div className="min-h-screen bg-gradient-to-br from-[#F0FAF9] via-white to-[#F0FAF9] dark:from-[#0F172A] dark:via-[#0F172A] dark:to-[#0F172A]">
           {/* Header Section */}
           <ApartmentHeader
-            app={app}
+            app={apartmentViewModel}
             userID={userID}
             apartmentId={apartmentId}
             liked={liked}
@@ -272,8 +381,8 @@ export default function ApartmentPage() {
               <div ref={pdfRef} id="section-foto">
                 {/* Hero Section */}
                 <ApartmentHero
-                  app={app}
-                  averageRating={app?.metrics?.ratingAvg ?? null}
+                  app={apartmentViewModel}
+                  averageRating={apartmentViewModel?.metrics?.ratingAvg ?? null}
                 />
 
                 {/* Image Gallery */}
@@ -285,10 +394,13 @@ export default function ApartmentPage() {
               </div>
 
               {/* Description and booking */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10 ">
+              <div
+                ref={roomsDataRef}
+                className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10 "
+              >
                 {/* Left section - Info */}
                 <div className="lg:col-span-2 space-y-8 ">
-                  <ApartmentInfo app={app} />
+                  <ApartmentInfo app={apartmentViewModel} rooms={rooms} />
 
                   <GreenDivider />
                 </div>
@@ -300,6 +412,7 @@ export default function ApartmentPage() {
                       <BookingForm
                         handleSubmit={handleSubmit}
                         rooms={rooms}
+                        roomsLoading={roomsLoading}
                         selectedRoomId={selectedRoomId}
                         onRoomSelect={setSelectedRoomId}
                         startDate={startDate}
@@ -318,27 +431,52 @@ export default function ApartmentPage() {
               </div>
             </div>
             <div className=" sm:px-2 ">
-              <OwnerInfoSection owner={owner} />
+              <div ref={ownerSectionRef}>
+                {shouldLoadOwnerSection ? (
+                  <Suspense fallback={<SectionCardSkeleton />}>
+                    <LazyOwnerInfoSection owner={owner} />
+                  </Suspense>
+                ) : (
+                  <SectionCardSkeleton />
+                )}
+              </div>
 
-              {/* Feedback Section */}
-              <ApartmentFeedbackSection
-                app={app}
-                reviews={recensioni}
-                stats={stats}
-                loading={loading}
-                containerClassName="my-6"
-              />
+              <div ref={feedbackSectionRef} className="my-6">
+                {shouldLoadFeedbackSection ? (
+                  <Suspense
+                    fallback={<SectionCardSkeleton className="min-h-[320px]" />}
+                  >
+                    <LazyApartmentFeedbackSection
+                      app={apartmentViewModel}
+                      reviews={recensioni}
+                      stats={stats}
+                      loading={reviewsLoading}
+                    />
+                  </Suspense>
+                ) : (
+                  <SectionCardSkeleton className="min-h-[320px]" />
+                )}
+              </div>
 
-              {/* Extra Features */}
-              <ApartmentExtraFeatures
-                app={app}
-                userID={userID}
-                apartmentId={apartmentId}
-                liked={liked}
-                setLiked={setLiked}
-                pdfRef={pdfRef}
-                socialLinks={socialLinks}
-              />
+              <div ref={extraSectionRef}>
+                {shouldLoadExtraSection ? (
+                  <Suspense
+                    fallback={<SectionCardSkeleton className="min-h-[280px]" />}
+                  >
+                    <LazyApartmentExtraFeatures
+                      app={apartmentViewModel}
+                      userID={userID}
+                      apartmentId={apartmentId}
+                      liked={liked}
+                      setLiked={setLiked}
+                      pdfRef={pdfRef}
+                      socialLinks={socialLinks}
+                    />
+                  </Suspense>
+                ) : (
+                  <SectionCardSkeleton className="min-h-[280px]" />
+                )}
+              </div>
             </div>
           </div>
 
@@ -347,6 +485,7 @@ export default function ApartmentPage() {
           <BookingForm
             handleSubmit={handleSubmit}
             rooms={rooms}
+            roomsLoading={roomsLoading}
             selectedRoomId={selectedRoomId}
             onRoomSelect={setSelectedRoomId}
             startDate={startDate}
@@ -355,6 +494,7 @@ export default function ApartmentPage() {
             apartmentId={apartmentId}
             ownerId={ownerId}
             version="button"
+            onOpen={() => setForceLoadRooms(true)}
             navigationLinks={navigationLinks}
             onNavigate={scrollToSection}
             containerClassName={`${

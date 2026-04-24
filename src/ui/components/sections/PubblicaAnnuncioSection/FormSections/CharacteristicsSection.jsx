@@ -21,6 +21,11 @@ const CharacteristicsSection = ({
   getFieldError,
   hasFieldError,
 }) => {
+  const safeGetFieldError =
+    typeof getFieldError === "function" ? getFieldError : () => null;
+  const safeHasFieldError =
+    typeof hasFieldError === "function" ? hasFieldError : () => false;
+
   return (
     <FormSection
       title="Caratteristiche e dettagli"
@@ -45,9 +50,9 @@ const CharacteristicsSection = ({
           }}
           showValue
         />
-        {getFieldError("features.totalAreaMq") && (
+        {safeGetFieldError("features.totalAreaMq") && (
           <p className="text-red-500 text-sm mt-1">
-            {getFieldError("features.totalAreaMq")}
+            {safeGetFieldError("features.totalAreaMq")}
           </p>
         )}
 
@@ -71,9 +76,9 @@ const CharacteristicsSection = ({
           }}
           maxValue={APARTMENTS.MAX_BATHROOMS}
         />
-        {hasFieldError("features.bathroomsCount") && (
+        {safeHasFieldError("features.bathroomsCount") && (
           <p className="text-red-500 text-sm mt-1">
-            {getFieldError("features.bathroomsCount")}
+            {safeGetFieldError("features.bathroomsCount")}
           </p>
         )}
 
@@ -82,8 +87,8 @@ const CharacteristicsSection = ({
             formData={formData}
             handleChange={handleChange}
             onBlur={handleBlur}
-            hasFieldError={hasFieldError}
-            getFieldError={getFieldError}
+            hasFieldError={safeHasFieldError}
+            getFieldError={safeGetFieldError}
           />
         </div>
         <div>

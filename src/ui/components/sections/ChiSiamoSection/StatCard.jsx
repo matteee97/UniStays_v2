@@ -1,8 +1,9 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import GlassContainer from "../../common/containers/GlassContainer";
 
 const StatCard = ({ stat, backgroundImage }) => (
-  <div className="relative text-center bg-transparent rounded-xl shadow-[0_15px_25px_rgba(0,0,0,0.25)] p-6 group hover:scale-105 transition-transform duration-300 overflow-hidden">
+  <div className="relative text-center bg-transparent rounded-xl shadow-[0_15px_25px_rgba(0,0,0,0.25)] p-6 group  transition-transform duration-300 overflow-hidden">
     <div>{backgroundImage}</div>
     {backgroundImage && (
       <div className="absolute inset-0 bg-gradient-to-t from-[#13605f]/50 dark:from-[#0F1829]/70 to-transparent dark:to-[#0F1829]/20 scale-110"></div>
@@ -10,7 +11,7 @@ const StatCard = ({ stat, backgroundImage }) => (
     <div className="w-16 h-16 bg-white border-2 border-[#228e8c47] group-hover:border-[#228e8c] rounded-full flex items-center justify-center opacity-95 mx-auto mb-4 transition-all duration-300">
       <FontAwesomeIcon icon={stat.icon} className="text-2xl text-[#228e8c]" />
     </div>
-    <div className="w-full rounded-lg bg-white/10 backdrop-blur-[9px] px-6 py-2">
+    <GlassContainer distortion={"strong"} className="w-full px-6 py-2">
       <div
         className="text-4xl md:text-5xl font-bold mb-2 group-hover:brightness-105 transition-colors duration-300"
         style={
@@ -37,7 +38,7 @@ const StatCard = ({ stat, backgroundImage }) => (
       >
         {stat.description}
       </div>
-    </div>
+    </GlassContainer>
   </div>
 );
 

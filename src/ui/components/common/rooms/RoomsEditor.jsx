@@ -7,7 +7,7 @@ import TextAreaEditor from "../form/TextAreaEditor";
 import Checkbox from "../form/Checkbox";
 import CustomDateInput from "../form/CustomDateInput";
 import RangeSliders from "@/ui/components/sections/PubblicaAnnuncioSection/RangeSliders";
-import { ROOM_TYPES } from "@/shared/types";
+import { ROOM_OCCUPANCY_STATUS, ROOM_TYPES } from "@/shared/types";
 import ImageWithSkeleton from "../ImageWithSkeleton";
 
 const roomTypeOptions = [
@@ -17,6 +17,20 @@ const roomTypeOptions = [
 ];
 
 const furnishingOptions = ["arredato", "parzialmente arredato", "non arredato"];
+
+const occupancyStatusOptions = [
+  { value: ROOM_OCCUPANCY_STATUS.FREE, label: "Libera" },
+  { value: ROOM_OCCUPANCY_STATUS.OCCUPIED, label: "Occupata" },
+  {
+    value: ROOM_OCCUPANCY_STATUS.PARTIALLY_OCCUPIED,
+    label: "Parzialmente occupata",
+  },
+  {
+    value: ROOM_OCCUPANCY_STATUS.AVAILABLE_WITH_OCCUPANTS,
+    label: "Disponibile con coinquilini presenti",
+  },
+  { value: ROOM_OCCUPANCY_STATUS.UNKNOWN, label: "Da definire" },
+];
 
 export default function RoomsEditor({
   rooms = [],
@@ -52,6 +66,12 @@ export default function RoomsEditor({
         const photoLabel = getPhotoUploaderLabel?.(room, index);
         const roomMeta = renderRoomMeta?.(room, index);
         const hasRoomPhotos = Array.isArray(photoUrls) && photoUrls.length > 0;
+        const occupancyCapacity = Number(room?.occupancy?.capacityTotal) || 1;
+        const occupancyOccupied = Number(room?.occupancy?.spotsOccupied) || 0;
+        const occupancyAvailable = Math.max(
+          occupancyCapacity - occupancyOccupied,
+          0
+        );
 
         return (
           <div
@@ -121,6 +141,78 @@ export default function RoomsEditor({
                       {safeGetFieldError(`rooms.${index}.furnishing`)}
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <FormSelect
+                    id={"occupazione-stanza"}
+                    name={`rooms.${index}.occupancy.status`}
+                    options={occupancyStatusOptions}
+                    value={room?.occupancy?.status || ROOM_OCCUPANCY_STATUS.FREE}
+                    onChange={handleChange}
+                    label="Stato occupazione stanza"
+                    minWidth="min-w-[200px]"
+                    required
+                  />
+                  {safeHasFieldError(`rooms.${index}.occupancy.status`) && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {safeGetFieldError(`rooms.${index}.occupancy.status`)}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label
+                    htmlFor={`rooms.${index}.occupancy.capacityTotal`}
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Posti totali stanza
+                  </label>
+                  <input
+                    id={`rooms.${index}.occupancy.capacityTotal`}
+                    name={`rooms.${index}.occupancy.capacityTotal`}
+                    type="number"
+                    min={1}
+                    value={room?.occupancy?.capacityTotal ?? 1}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full rounded-xl border-2 border-[#d4f1ef] px-3 py-2 text-sm focus:outline-none focus:border-[#228E8D]"
+                  />
+                  {safeHasFieldError(`rooms.${index}.occupancy.capacityTotal`) && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {safeGetFieldError(`rooms.${index}.occupancy.capacityTotal`)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor={`rooms.${index}.occupancy.spotsOccupied`}
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Posti occupati
+                  </label>
+                  <input
+                    id={`rooms.${index}.occupancy.spotsOccupied`}
+                    name={`rooms.${index}.occupancy.spotsOccupied`}
+                    type="number"
+                    min={0}
+                    max={occupancyCapacity}
+                    value={room?.occupancy?.spotsOccupied ?? 0}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full rounded-xl border-2 border-[#d4f1ef] px-3 py-2 text-sm focus:outline-none focus:border-[#228E8D]"
+                  />
+                  {safeHasFieldError(`rooms.${index}.occupancy.spotsOccupied`) && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {safeGetFieldError(`rooms.${index}.occupancy.spotsOccupied`)}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Posti ancora liberi: {occupancyAvailable}
+                  </p>
                 </div>
               </div>
 

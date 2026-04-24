@@ -44,9 +44,11 @@ const BookingForm = forwardRef(
       containerClassName = "",
       navigationLinks = [],
       onNavigate = null,
+      onOpen = null,
+      roomsLoading = false,
     },
-    ref
-    ) => {
+    ref,
+  ) => {
     const [modal, setModal] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const reportTarget = apartmentId
@@ -85,7 +87,7 @@ const BookingForm = forwardRef(
             label: parts.join(" · "),
           };
         }),
-      [normalizedRooms]
+      [normalizedRooms],
     );
 
     const selectedRoom =
@@ -131,7 +133,9 @@ const BookingForm = forwardRef(
         }`}
         onSubmit={handleSubmit}
       >
-        {normalizedRooms.length > 1 ? (
+        {roomsLoading ? (
+          <p className="text-sm text-gray-500">Caricamento stanze...</p>
+        ) : normalizedRooms.length > 1 ? (
           <FormSelectDropdown
             name="selectedRoom"
             label="Seleziona la stanza"
@@ -165,7 +169,9 @@ const BookingForm = forwardRef(
         </div>
         <CoolButton
           ariaLabel="Invia richiesta di prenotazione"
-          disabled={normalizedRooms.length > 1 && !selectedRoomId}
+          disabled={
+            roomsLoading || (normalizedRooms.length > 1 && !selectedRoomId)
+          }
         >
           Contatta {isAgency ? "l'agenzia" : "il proprietario"}
         </CoolButton>
@@ -227,7 +233,10 @@ const BookingForm = forwardRef(
 
                     <CoolButton
                       type="button"
-                      onClick={() => setModal(true)}
+                      onClick={() => {
+                        onOpen?.();
+                        setModal(true);
+                      }}
                       ariaLabel={`Apri il modulo per contattare ${
                         isAgency ? "l'agenzia" : "il proprietario"
                       }`}
@@ -294,7 +303,7 @@ const BookingForm = forwardRef(
         />
       </>
     );
-  }
+  },
 );
 
 export default BookingForm;

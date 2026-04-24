@@ -25,6 +25,14 @@ export default function TermsAndConditionsPage() {
           L&apos;accesso al sito e/o la creazione di un account comportano
           accettazione dei presenti Termini.
         </p>
+        <p className={paragraphClass}>
+          {LEGAL_CONTACT.brandName} opera esclusivamente come piattaforma
+          tecnologica che consente agli utenti di pubblicare, consultare e
+          gestire annunci. {LEGAL_CONTACT.brandName} non e&apos; proprietario,
+          locatore, intermediario immobiliare, agente o agenzia immobiliare e
+          non e&apos; parte dei contratti eventualmente conclusi tra gli utenti,
+          salvo diverso accordo scritto espressamente dichiarato.
+        </p>
       </section>
 
       <section className="space-y-3" id="soggetto-erogatore">
@@ -61,6 +69,12 @@ export default function TermsAndConditionsPage() {
           Salvo diverso accordo scritto, il gestore non e&apos; parte dei
           contratti eventualmente conclusi tra utenti e {USER_ROLES.HOST}.
         </p>
+        <p className={paragraphClass}>
+          Eventuali trattative, pagamenti, caparre, canoni, accordi
+          contrattuali, prenotazioni o altre intese economiche o giuridiche
+          avvengono direttamente tra gli utenti senza coinvolgimento del
+          gestore della piattaforma.
+        </p>
       </section>
 
       <section className="space-y-3" id="requisiti-account">
@@ -95,8 +109,21 @@ export default function TermsAndConditionsPage() {
             offensivi o lesivi di diritti di terzi.
           </li>
           <li>
+            Le informazioni pubblicate negli annunci, incluse immagini,
+            descrizioni, prezzi, disponibilita&apos;, coordinate, mappe,
+            geolocalizzazione, metrature, dotazioni e stato dell&apos;immobile,
+            sono inserite sotto la responsabilita&apos; esclusiva
+            dell&apos;{USER_ROLES.HOST}.
+          </li>
+          <li>
             Il gestore puo&apos; sottoporre gli annunci a revisione, sospendere,
             rifiutare o rimuovere contenuti non conformi.
+          </li>
+          <li>
+            Salvo ove espressamente indicato, il gestore non effettua verifiche
+            sistematiche preventive sull&apos;identita&apos;, titolarita&apos;,
+            disponibilita&apos;, affidabilita&apos; o solvibilita&apos; degli
+            utenti ne&apos; sulla veridicita&apos; dei contenuti pubblicati.
           </li>
           <li>
             L&apos;{USER_ROLES.HOST} autorizza l&apos;uso tecnico dei contenuti
@@ -165,15 +192,45 @@ export default function TermsAndConditionsPage() {
             contrattuali conclusi tra utenti e {USER_ROLES.HOST}.
           </li>
           <li>
+            Il gestore non garantisce la veridicita&apos;, accuratezza,
+            completezza, liceita&apos; o aggiornamento degli annunci pubblicati
+            dagli utenti, ne&apos; l&apos;esattezza delle informazioni relative
+            agli immobili, alle loro condizioni, alla disponibilita&apos;, ai
+            prezzi, alle immagini o alle coordinate geografiche mostrate in
+            piattaforma.
+          </li>
+          <li>
+            Il gestore non risponde, nei limiti di legge, per truffe, condotte
+            fraudolente, informazioni false, omissioni, inadempimenti,
+            cancellazioni, danni agli immobili, danni a persone o cose,
+            controversie, perdite economiche o altri pregiudizi derivanti dai
+            rapporti o dagli accordi intercorsi tra utenti.
+          </li>
+          <li>
             L&apos;utente resta responsabile dei contenuti e delle condotte
             poste in essere tramite la piattaforma.
           </li>
         </ul>
       </section>
 
+      <section className="space-y-3" id="manleva-indennizzo">
+        <h2 className={sectionTitleClass}>
+          9. Manleva e indennizzo
+        </h2>
+        <p className={paragraphClass}>
+          L&apos;utente si impegna a manlevare e tenere indenne{" "}
+          {LEGAL_CONTACT.brandName}, i suoi titolari, collaboratori e fornitori
+          da qualsiasi pretesa, danno, responsabilita&apos;, sanzione, costo o
+          spesa, incluse ragionevoli spese legali, derivanti dall&apos;uso
+          improprio della piattaforma, dalla pubblicazione di contenuti illeciti
+          o inesatti, dalla violazione dei presenti Termini o dalla violazione
+          di diritti di terzi.
+        </p>
+      </section>
+
       <section className="space-y-3" id="sospensione-risoluzione">
         <h2 className={sectionTitleClass}>
-          9. Sospensione, limitazione e cessazione account
+          10. Sospensione, limitazione e cessazione account
         </h2>
         <p className={paragraphClass}>
           In caso di violazione dei presenti Termini o di uso improprio della
@@ -184,7 +241,7 @@ export default function TermsAndConditionsPage() {
       </section>
 
       <section className="space-y-3" id="modifiche-termini">
-        <h2 className={sectionTitleClass}>10. Modifiche ai Termini</h2>
+        <h2 className={sectionTitleClass}>11. Modifiche ai Termini</h2>
         <p className={paragraphClass}>
           Il gestore puo&apos; aggiornare i presenti Termini per esigenze
           legali, tecniche o organizzative. Le modifiche saranno pubblicate su
@@ -193,7 +250,7 @@ export default function TermsAndConditionsPage() {
       </section>
 
       <section className="space-y-3" id="legge-foro">
-        <h2 className={sectionTitleClass}>11. Legge applicabile e foro</h2>
+        <h2 className={sectionTitleClass}>12. Legge applicabile e foro</h2>
         <p className={paragraphClass}>
           I presenti Termini sono regolati dalla legge italiana. Salvo diversi
           diritti inderogabili del consumatore, per ogni controversia e&apos;
@@ -202,7 +259,7 @@ export default function TermsAndConditionsPage() {
       </section>
 
       <section className="space-y-3" id="contatti">
-        <h2 className={sectionTitleClass}>12. Contatti legali</h2>
+        <h2 className={sectionTitleClass}>13. Contatti legali</h2>
         <p className={paragraphClass}>
           Per richieste relative a questi Termini o alla protezione dati:
         </p>

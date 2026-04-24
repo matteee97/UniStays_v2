@@ -146,7 +146,7 @@ export default function ApartmentExtraFeatures({
                       <FontAwesomeIcon icon={social.icon} className="w-4 h-4" />
                       <span className="text-sm">{social.label}</span>
                     </button>
-                  )
+                  ),
                 )}
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function ApartmentExtraFeatures({
           )}
         </div>
 
-        {/* Property Stats */}
+        {/*{/* Property Stats }
         <div className="bg-white rounded-2xl p-6 border border-[#d4f1ef]">
           <h3 className="sr-only">Statistiche dell'annuncio</h3>
 
@@ -256,7 +256,7 @@ export default function ApartmentExtraFeatures({
           </div>
         </div>
 
-        {/* Export Options */}
+        {/* Export Options }
         <div className="bg-white rounded-2xl p-6 border border-[#d4f1ef]">
           <h3 className="sr-only">Esporta annuncio</h3>
 
@@ -277,7 +277,7 @@ export default function ApartmentExtraFeatures({
               <span className="font-medium">Scarica PDF</span>
             </button>
           </div>
-        </div>
+        </div>*/}
       </div>
 
       <ReportModal

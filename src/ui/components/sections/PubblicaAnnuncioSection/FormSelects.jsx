@@ -7,6 +7,11 @@ const FormSelects = ({
   hasFieldError,
   getFieldError,
 }) => {
+  const safeGetFieldError =
+    typeof getFieldError === "function" ? getFieldError : () => null;
+  const safeHasFieldError =
+    typeof hasFieldError === "function" ? hasFieldError : () => false;
+
   return (
     <>
       <FormSelect
@@ -18,11 +23,11 @@ const FormSelects = ({
         label="Seleziona tipo di riscaldamento"
         required={true}
         minWidth={"min-w-44"}
-        hasFieldError={hasFieldError("features.heatingType")}
+        hasFieldError={safeHasFieldError("features.heatingType")}
       />
-      {getFieldError("features.heatingType") && (
+      {safeGetFieldError("features.heatingType") && (
         <p className="text-red-500 text-sm mt-1">
-          {getFieldError("features.heatingType")}
+          {safeGetFieldError("features.heatingType")}
         </p>
       )}
       <FormSelect
@@ -34,11 +39,11 @@ const FormSelects = ({
         label="Seleziona piano"
         required={true}
         minWidth={"min-w-44"}
-        hasFieldError={hasFieldError("features.floor")}
+        hasFieldError={safeHasFieldError("features.floor")}
       />
-      {getFieldError("features.floor") && (
+      {safeGetFieldError("features.floor") && (
         <p className="text-red-500 text-sm mt-1">
-          {getFieldError("features.floor")}
+          {safeGetFieldError("features.floor")}
         </p>
       )}
       <FormSelect
@@ -50,11 +55,11 @@ const FormSelects = ({
         label="Stato immobile"
         required={true}
         minWidth={"min-w-44"}
-        hasFieldError={hasFieldError("features.propertyCondition")}
+        hasFieldError={safeHasFieldError("features.propertyCondition")}
       />
-      {getFieldError("features.propertyCondition") && (
+      {safeGetFieldError("features.propertyCondition") && (
         <p className="text-red-500 text-sm mt-1">
-          {getFieldError("features.propertyCondition")}
+          {safeGetFieldError("features.propertyCondition")}
         </p>
       )}
       <FormSelect
@@ -66,11 +71,11 @@ const FormSelects = ({
         label="Garage"
         required={true}
         minWidth={"min-w-44"}
-        hasFieldError={hasFieldError("features.garageType")}
+        hasFieldError={safeHasFieldError("features.garageType")}
       />
-      {getFieldError("features.garageType") && (
+      {safeGetFieldError("features.garageType") && (
         <p className="text-red-500 text-sm mt-1">
-          {getFieldError("features.garageType")}
+          {safeGetFieldError("features.garageType")}
         </p>
       )}
       <FormSelect
@@ -82,11 +87,11 @@ const FormSelects = ({
         label="Giardino"
         required={true}
         minWidth={"min-w-44"}
-        hasFieldError={hasFieldError("features.gardenType")}
+        hasFieldError={safeHasFieldError("features.gardenType")}
       />
-      {getFieldError("features.gardenType") && (
+      {safeGetFieldError("features.gardenType") && (
         <p className="text-red-500 text-sm mt-1">
-          {getFieldError("features.gardenType")}
+          {safeGetFieldError("features.gardenType")}
         </p>
       )}
       <FormSelect
@@ -98,11 +103,11 @@ const FormSelects = ({
         label="Seleziona solo studenti"
         required={true}
         minWidth={"min-w-44"}
-        hasFieldError={hasFieldError("houseRules.studentsOnly")}
+        hasFieldError={safeHasFieldError("houseRules.studentsOnly")}
       />
-      {getFieldError("houseRules.studentsOnly") && (
+      {safeGetFieldError("houseRules.studentsOnly") && (
         <p className="text-red-500 text-sm mt-1">
-          {getFieldError("houseRules.studentsOnly")}
+          {safeGetFieldError("houseRules.studentsOnly")}
         </p>
       )}
       <FormSelect
@@ -114,11 +119,11 @@ const FormSelects = ({
         label="Tipo di cucina"
         required={true}
         minWidth={"min-w-44"}
-        hasFieldError={hasFieldError("amenities.kitchenType")}
+        hasFieldError={safeHasFieldError("amenities.kitchenType")}
       />
-      {getFieldError("amenities.kitchenType") && (
+      {safeGetFieldError("amenities.kitchenType") && (
         <p className="text-red-500 text-sm mt-1">
-          {getFieldError("amenities.kitchenType")}
+          {safeGetFieldError("amenities.kitchenType")}
         </p>
       )}
     </>

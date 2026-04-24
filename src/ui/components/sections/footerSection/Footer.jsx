@@ -3,7 +3,7 @@ import {
   faInstagram,
   faXTwitter,
 } from "@fortawesome/free-brands-svg-icons";
-import LegalLinks from "@/ui/components/common/LegalLinks";
+import LegalLinks from "@/ui/components/common/legal/LegalLinks.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function Footer({

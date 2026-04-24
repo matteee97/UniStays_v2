@@ -11,9 +11,6 @@ const DEFAULT_SCORE_WEIGHTS = {
   unpublishedPenalty: 12.0,
 };
 
-const clamp = (value, min = 0, max = Infinity) =>
-    Math.min(Math.max(value, min), max);
-
 const log1pSafe = (value) => Math.log1p(Math.max(0, Number(value) || 0));
 
 const normalizeApartmentMetrics = (metrics = {}) => {

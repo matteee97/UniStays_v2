@@ -54,7 +54,7 @@ const NavigationButtons = ({ scrollRef, atStart = true, atEnd = false }) => {
         onClick={() => scrollByCard("prev")}
         disabled={atStart}
         ariaLabel="Mostra le card precedenti"
-        className="left-2 sm:left-5 p-1 sm:p-2"
+        className="left-2 sm:left-5"
       >
         &#10094;
       </PrevButton>
@@ -63,7 +63,7 @@ const NavigationButtons = ({ scrollRef, atStart = true, atEnd = false }) => {
         onClick={() => scrollByCard("next")}
         disabled={atEnd}
         ariaLabel="Mostra le card successive"
-        className="right-2 sm:right-5 p-1 sm:p-2"
+        className="right-2 sm:right-5"
       >
         &#10095;
       </NextButton>

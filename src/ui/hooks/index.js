@@ -40,6 +40,8 @@ export { useCitiesByLetter } from './fetches/useCitiesByLetter';
 export { useCities, useCityBySlug } from './fetches/useCities';
 export { useCityLogic } from './fetches/useCityDropdownLogic';
 export { default as useFetchApartment } from './fetches/useFetchApartment';
+export { useFetchApartmentRooms } from './fetches/useFetchApartmentRooms';
+export { useFetchApartmentOccupants } from './fetches/useFetchApartmentOccupants';
 export { useFetchAppartamenti } from './fetches/useFetchAppartamenti';
 export { default as useFavoriteApartments } from './fetches/useFetchFavoriteApartments';
 export { default as useFetchFavoriteApartments } from './fetches/useFetchFavoriteApartments'; // Alias per compatibilità
@@ -63,6 +65,7 @@ export { useFormValidation, validators } from './forms/useFormValidation';
 // Interactive Hooks
 export { default as useClickOutside } from './interactives/useClickOutside';
 export { default as useInView } from './interactives/useInView';
+export { default as useDeferredInView } from './interactives/useDeferredInView';
 export { default as useNavigateToCity } from './interactives/useNavigateToCity';
 export { default as useTouchSwipe } from './interactives/useTouchSwipe';
 export { useScroll } from './interactives/useScroll';
@@ -78,6 +81,7 @@ export { default as useSocialLinks } from './share/useSocialLinks';
 
 // UI Hooks
 export { useScrollProgress } from './ui/useScrollProgress';
+export { CookieConsentProvider, useCookieConsent } from './ui/useCookieConsent';
 export { ThemeProvider, useTheme } from './ui/useTheme';
 export { default as useWindowWidth } from './ui/useWindowWidth';
 export { usePaginationSlice } from './ui/usePaginationSlice';

@@ -16,12 +16,20 @@ File coinvolti: `firestore.rules`, `functions/index.js`, `functions/src/modules/
 - `usersPrivate/{userId}/favorites/{apartmentId}`: `read` owner/admin; `create/update/delete` solo admin.
 File coinvolti: `firestore.rules`, `functions/index.js`, `functions/src/modules/favorites/registerFavoritesRoutes.js`, `functions/src/modules/reports/registerReportRoutes.js`
 
-## Apartments, Rooms, Analytics
+## Apartments, Rooms, Occupants, Analytics
 - `apartments/{apartmentId}`:
   - `get/list` se `status == "published"` oppure owner/admin.
   - `create/update/delete` solo admin.
 - `apartments/{apartmentId}/rooms/{roomId}`:
   - `get/list` se annuncio pubblicato oppure owner/admin.
+  - schema room esteso con `occupancy` e `occupantIds`.
+  - `create/update/delete` solo admin.
+- `apartments/{apartmentId}/occupants/{occupantId}`:
+  - `get/list` owner/admin.
+  - `get/list` pubblico solo se annuncio pubblicato **e** record coinquilino pubblicabile (`visibility.isPublic == true`, `consent.status == "granted"`, `moderation.status == "visible"`).
+  - `create/update/delete` solo admin.
+- `apartments/{apartmentId}/occupantsPrivate/{occupantId}`:
+  - `read` owner/admin.
   - `create/update/delete` solo admin.
 - `apartments/{apartmentId}/analytics/summary` e `/daily/{dayId}`:
   - `read` owner/admin.

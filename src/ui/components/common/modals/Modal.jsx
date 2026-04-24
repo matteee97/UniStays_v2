@@ -26,6 +26,8 @@ export default function Modal({
   id,
   disableOutsideClick = false,
   closeOnEsc = true,
+  disableEffects = false,
+  disableDistortion = false,
 }) {
   const modalRef = useRef(null);
   const [imgRef, isVisible] = useInView({ threshold: 0.1 });
@@ -78,7 +80,8 @@ export default function Modal({
         <GlassContainer
           ref={modalRef}
           tabIndex={-1}
-          distortion={"medium"}
+          disableEffects={disableEffects}
+          disableDistortion={disableDistortion}
           className={
             "max-h-[74vh] sm:max-h-[95vh] flex flex-col outline-none  w-[98vw] sm:w-full rounded-2xl p-3 sm:p-6"
           }

@@ -4,13 +4,13 @@ import Modal from "../../modals/Modal";
 import RoomsEditor from "../../rooms/RoomsEditor";
 import CoolButton from "../../buttons/CoolButton";
 import compressAndUploadImages from "@/infrastructure/firebase/adapters/compressAndUploadImages";
-import { ApartmentAggregateCalculator } from "@/core/services/ApartmentAggregateCalculator";
 import { FirestoreApartmentRepository } from "@/infrastructure/firebase/repositories/FirestoreApartmentRepository";
 import { FirestoreRoomRepository } from "@/infrastructure/firebase/repositories/FirestoreRoomRepository";
 import { FirestoreStorageRepository } from "@/infrastructure/firebase/repositories/FirestoreStorageRepository";
 import { createRoomDraft } from "@/core/valueObjects/roomDraft";
 import { useFormValidation } from "@/ui/hooks";
 import { buildRoomsValidationRules } from "@/ui/hooks/forms/roomsValidationRules";
+import { normalizeRoomOccupancy } from "@/core/services/RoomOccupancyDomain";
 
 const toDateValue = (raw) => {
   if (!raw) return null;
@@ -40,6 +40,11 @@ const buildRoomDraft = (room) => ({
     isAvailableNow: room.availability?.isAvailableNow ?? true,
     availableFrom: toDateString(room.availability?.availableFrom),
   },
+  occupancy: normalizeRoomOccupancy(
+    room.occupancy || {},
+    room.occupantIds || [],
+  ),
+  occupantIds: Array.isArray(room.occupantIds) ? room.occupantIds : [],
   photoUrls: Array.isArray(room.photoUrls) ? room.photoUrls : [],
   photoFiles: [],
 });
@@ -68,9 +73,17 @@ export default function AnnuncioRoomsModal({
         rooms: roomsDraft,
         features: { totalAreaMq },
       }),
-    [roomsDraft.length, totalAreaMq],
+    [roomsDraft, totalAreaMq],
   );
   const validation = useFormValidation(validationRules, validationFormData);
+  const {
+    clearErrors,
+    clearFieldError,
+    touched,
+    touchField,
+    validateAll,
+    validateSingleField,
+  } = validation;
 
   const hasRooms = roomsDraft.length > 0;
 
@@ -85,7 +98,7 @@ export default function AnnuncioRoomsModal({
         const nextRooms = (rooms || []).map(buildRoomDraft);
         setRoomsDraft(nextRooms);
         setRemovedPhotoUrls([]);
-        validation.clearErrors();
+        clearErrors();
       })
       .catch((err) => {
         if (cancelled) return;
@@ -100,17 +113,12 @@ export default function AnnuncioRoomsModal({
     return () => {
       cancelled = true;
     };
-  }, [annuncioId, isOpen, validation.clearErrors]);
+  }, [annuncioId, clearErrors, isOpen]);
 
   useEffect(() => {
-    if (!validation.touched?.rooms) return;
-    validation.validateSingleField("rooms");
-  }, [
-    roomsDraft,
-    totalAreaMq,
-    validation.touched,
-    validation.validateSingleField,
-  ]);
+    if (!touched?.rooms) return;
+    validateSingleField("rooms");
+  }, [roomsDraft, touched, totalAreaMq, validateSingleField]);
 
   const updateRoomField = useCallback((name, value) => {
     const [root, indexValue, ...path] = (name || "").split(".");
@@ -140,10 +148,10 @@ export default function AnnuncioRoomsModal({
     (event) => {
       const { name } = event.target || {};
       if (!name) return;
-      validation.touchField(name);
-      validation.validateSingleField(name);
+      touchField(name);
+      validateSingleField(name);
     },
-    [validation.touchField, validation.validateSingleField],
+    [touchField, validateSingleField],
   );
 
   const handleRoomChange = useCallback(
@@ -158,9 +166,7 @@ export default function AnnuncioRoomsModal({
         updateRoomField(name, checked);
         if (name.endsWith("availability.isAvailableNow") && checked) {
           updateRoomField(name.replace("isAvailableNow", "availableFrom"), "");
-          validation.clearFieldError(
-            name.replace("isAvailableNow", "availableFrom"),
-          );
+          clearFieldError(name.replace("isAvailableNow", "availableFrom"));
         }
       } else if (type === "file") {
         nextValue = Array.from(files || []);
@@ -169,33 +175,28 @@ export default function AnnuncioRoomsModal({
         updateRoomField(name, value);
       }
 
-      validation.touchField(name);
+      touchField(name);
 
       const shouldValidateRooms =
         (name?.startsWith("rooms.") && name.endsWith(".areaMq")) ||
         name === "features.totalAreaMq";
       if (shouldValidateRooms) {
-        validation.touchField("rooms");
+        touchField("rooms");
       }
 
       if (typeof nextValue === "string" && nextValue.trim() === "") {
-        validation.clearFieldError(name);
+        clearFieldError(name);
         return;
       }
 
       setTimeout(() => {
-        validation.validateSingleField(name);
+        validateSingleField(name);
         if (shouldValidateRooms) {
-          validation.validateSingleField("rooms");
+          validateSingleField("rooms");
         }
       }, 0);
     },
-    [
-      updateRoomField,
-      validation.clearFieldError,
-      validation.touchField,
-      validation.validateSingleField,
-    ],
+    [clearFieldError, touchField, updateRoomField, validateSingleField],
   );
 
   const removePhotoUrl = useCallback(
@@ -215,20 +216,20 @@ export default function AnnuncioRoomsModal({
         prev.includes(urlToRemove) ? prev : [...prev, urlToRemove],
       );
       const fieldName = `rooms.${index}.photoFiles`;
-      validation.touchField(fieldName);
+      touchField(fieldName);
       setTimeout(() => {
-        validation.validateSingleField(fieldName);
+        validateSingleField(fieldName);
       }, 0);
     },
-    [validation.touchField, validation.validateSingleField],
+    [touchField, validateSingleField],
   );
 
   const handleSave = async () => {
     if (!annuncioId || !hasRooms) return;
-    const isValid = validation.validateAll();
+    const isValid = validateAll();
     if (!isValid) {
       Object.keys(validationRules).forEach((field) =>
-        validation.touchField(field),
+        touchField(field),
       );
       toast.error("Completa i campi obbligatori prima di salvare.");
       return;
@@ -262,7 +263,6 @@ export default function AnnuncioRoomsModal({
           const availableFrom = isAvailableNow
             ? null
             : toJsDate(room.availability?.availableFrom);
-
           return {
             roomId,
             data: {
@@ -275,6 +275,10 @@ export default function AnnuncioRoomsModal({
                 isAvailableNow: Boolean(isAvailableNow),
                 availableFrom,
               },
+              occupancy: room.occupancy || {},
+              occupantIds: Array.isArray(room.occupantIds)
+                ? room.occupantIds.filter(Boolean)
+                : [],
               photoUrls,
               notes: room.notes?.trim() || "",
             },
@@ -282,18 +286,16 @@ export default function AnnuncioRoomsModal({
         }),
       );
 
-      const aggregates = ApartmentAggregateCalculator.calculate(
-        roomUpdates.map((entry) => entry.data),
-      );
-
-      await FirestoreApartmentRepository.updateRoomsAndAggregates(
+      const result = await FirestoreApartmentRepository.updateRooms(
         annuncioId,
         roomUpdates,
-        aggregates,
       );
 
       setRemovedPhotoUrls([]);
-      onRoomsUpdated?.(aggregates);
+      onRoomsUpdated?.({
+        aggregates: result?.aggregates,
+        occupancySummary: result?.occupancySummary,
+      });
       toast.success("Stanze aggiornate.");
       onClose();
     } catch (err) {
@@ -307,7 +309,13 @@ export default function AnnuncioRoomsModal({
   if (!isOpen) return null;
 
   return (
-    <Modal title="Modifica stanze" onClose={onClose} disableOutsideClick>
+    <Modal
+      disableEffects
+      disableDistortion
+      title="Modifica stanze"
+      onClose={onClose}
+      disableOutsideClick
+    >
       <div className="space-y-6 w-full md:w-[60vh] lg:min-w-[896px] min-h-[95vh] sm:max-w-4xl">
         {loading ? (
           <p className="text-sm text-gray-500">Caricamento stanze...</p>

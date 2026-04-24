@@ -69,15 +69,6 @@ const parseDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const toStartOfDayTimestamp = (value) => {
-  const parsed = parseDate(value);
-  if (!parsed) return null;
-
-  const day = new Date(parsed);
-  day.setHours(0, 0, 0, 0);
-  return day.getTime();
-};
-
 /**
  * Normalize UI filters and apply defaults.
  *
@@ -322,21 +313,20 @@ export const filterByArea = (features, minimum) => {
  */
 export const filterByAvailabilityNow = (aggregates, mustBeAvailable) => {
   if (!mustBeAvailable) return true;
-  return aggregates?.isAvailableNow === true;
+  return aggregates?.isAvailableNow === true || filterByAvailableFromDate(aggregates, new Date());
 };
 
 const filterByAvailableFromDate = (aggregates, selectedDate) => {
   if (!selectedDate) return true;
-  if (aggregates?.isAvailableNow === true) return true;
 
-  const availableFromTs = toStartOfDayTimestamp(aggregates?.availableFromMin);
-  const selectedDateTs = toStartOfDayTimestamp(selectedDate);
-
-  if (availableFromTs == null || selectedDateTs == null) {
-    return false;
+  if (aggregates?.isAvailableNow === true) {
+    return true;
   }
 
-  return availableFromTs <= selectedDateTs;
+  const availableFrom = parseDate(aggregates?.availableFromMin);
+  if (!availableFrom) return false;
+
+  return availableFrom.getTime() <= selectedDate.getTime();
 };
 
 /**
@@ -348,10 +338,13 @@ const filterByAvailableFromDate = (aggregates, selectedDate) => {
  */
 export const filterByRoomType = (apartment, roomType) => {
   if (!roomType) return true;
+  const roomTypes = Array.isArray(apartment?.aggregates?.roomTypes)
+    ? apartment.aggregates.roomTypes
+    : null;
+  if (roomTypes) return roomTypes.includes(roomType);
+
   const rooms = Array.isArray(apartment?.rooms) ? apartment.rooms : null;
 
-  // Listing documents might not include rooms. In that case, keep results
-  // stable and let detail pages enforce room-level checks.
   if (!rooms) return true;
 
   return rooms.some((room) => room?.type === roomType);

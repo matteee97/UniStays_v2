@@ -1,5 +1,6 @@
 import { collection, doc, getDocs } from "firebase/firestore";
 import { db } from "@/infrastructure/firebase";
+import { normalizeRoomOccupancy } from "@/core/services/RoomOccupancyDomain";
 
 const getRoomsCollection = (apartmentId) =>
   collection(db, "apartments", apartmentId, "rooms");
@@ -42,14 +43,33 @@ export const FirestoreRoomRepository = {
     }
     const snap = await getDocs(getRoomsCollection(apartmentId));
     return snap.docs.map((docSnap) => {
-      const data = docSnap.data();
+      const data = docSnap.data() || {};
       const normalizedAvailability = normalizeAvailability(data?.availability);
+      const occupantIds = Array.isArray(data?.occupantIds)
+        ? data.occupantIds.filter((value) => typeof value === "string")
+        : [];
+      const occupancy = normalizeRoomOccupancy(
+        data?.occupancy || {},
+        occupantIds,
+        normalizedAvailability || data?.availability || null
+      );
+      const normalizedRoomId =
+        typeof data?.roomId === "string" && data.roomId.trim()
+          ? data.roomId.trim()
+          : docSnap.id;
+      const baseRoom = {
+        ...data,
+        id: docSnap.id,
+        roomId: normalizedRoomId,
+        occupantIds,
+        occupancy,
+      };
+
       if (normalizedAvailability === data?.availability) {
-        return { id: docSnap.id, ...data };
+        return baseRoom;
       }
       return {
-        id: docSnap.id,
-        ...data,
+        ...baseRoom,
         availability: normalizedAvailability,
       };
     });

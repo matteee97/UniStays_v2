@@ -92,7 +92,7 @@ export const VALIDATION = {
   MAX_DESCRIPTION_LENGTH: 1000,
   MAX_BIO_LENGTH: 500,
   TEXT_REGEX: /^[a-zA-ZàèéìòùÀÈÉÌÒÙ\s]+$/,
-  PHONE_REGEX: /^[\+]?[1-9][\d]{0,15}$/,
+  PHONE_REGEX: /^\+?[1-9][\d]{0,15}$/,
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   NUMERIC_REGEX: /^[0-9]+$/,
   CAP_REGEX: /^[0-9]{5}$/,
@@ -174,6 +174,39 @@ export const ROOM_TYPES = {
   SINGLE: "single",
   DOUBLE: "double",
   ENTIRE_APARTMENT: "entire_apartment",
+};
+
+// Room occupancy status
+export const ROOM_OCCUPANCY_STATUS = {
+  FREE: "free",
+  OCCUPIED: "occupied",
+  PARTIALLY_OCCUPIED: "partially_occupied",
+  AVAILABLE_WITH_OCCUPANTS: "available_with_occupants",
+  UNKNOWN: "unknown",
+};
+
+// Occupant presence status
+export const OCCUPANT_PRESENCE_STATUS = {
+  PRESENT: "present",
+  WEEKDAYS_ONLY: "weekdays_only",
+  WEEKENDS_ONLY: "weekends_only",
+  OCCASIONAL: "occasional",
+  MOVING_IN: "moving_in",
+  MOVING_OUT: "moving_out",
+};
+
+// Occupant consent status
+export const OCCUPANT_CONSENT_STATUS = {
+  PENDING: "pending",
+  GRANTED: "granted",
+  REVOKED: "revoked",
+};
+
+// Occupant moderation status
+export const OCCUPANT_MODERATION_STATUS = {
+  VISIBLE: "visible",
+  PENDING_REVIEW: "pending_review",
+  HIDDEN: "hidden",
 };
 
 // Location Constants

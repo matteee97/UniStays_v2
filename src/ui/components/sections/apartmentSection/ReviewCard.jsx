@@ -1,18 +1,18 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faUser,
   faCalendarAlt,
   faThumbsUp,
   faReply,
   faFlag,
+  faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
-import { Badge } from "@/ui/components/common/badges";
 import { renderStars } from "@/ui/helpers/renderStars.jsx";
 import { formatDate } from "@/ui/helpers/formatDate";
 import ReplyForm from "./ReplyForm";
 import { useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import ReportModal from "@/ui/components/common/reports/ReportModal";
+import AvatarWithFallback from "@/ui/components/common/avatars/AvatarWithFallback";
 
 /**
  * Componente per la singola recensione
@@ -48,17 +48,14 @@ export default function ReviewCard({
       {/* Review Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          {review.authorPhotoUrl ? (
-            <img
-              src={review.authorPhotoUrl}
-              alt={review.authorName || "Utente"}
-              className="w-10 h-10 rounded-full object-cover border-2 border-[#228E8D]"
-            />
-          ) : (
-            <div className="w-10 h-10 bg-[#228E8D]/10 rounded-full flex items-center justify-center">
-              <FontAwesomeIcon icon={faUser} className="text-[#228E8D]" />
-            </div>
-          )}
+          <AvatarWithFallback
+            avatarUrl={review.authorPhotoUrl || ""}
+            name={review.authorName || "Studente"}
+            alt={review.authorName || "Utente"}
+            className="w-10 h-10 rounded-full border-2 border-[#228E8D]"
+            initialsClassName="text-sm"
+            imageClassName="rounded-full"
+          />
           <div>
             <div className="font-medium text-gray-800">
               {review.authorName || "Studente"}
@@ -119,14 +116,10 @@ export default function ReviewCard({
         </div>
 
         {reply?.isOwner && (
-          <Badge
-            variant="verified"
-            size="sm"
-            icon="check"
-            className=" hidden md:flex"
-          >
-            Risposta del proprietario
-          </Badge>
+          <span className="hidden md:inline-flex items-center gap-2 text-sm font-medium text-[#228E8D]">
+            <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4" />
+            <span>Risposta del proprietario</span>
+          </span>
         )}
       </div>
 
@@ -141,18 +134,14 @@ export default function ReviewCard({
         >
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              {reply?.authorPhotoUrl ? (
-                <img
-                  src={reply.authorPhotoUrl}
-                  alt={reply?.authorName || "Utente"}
-                  className="w-6 h-6 rounded-full object-cover border border-[#228E8D]"
-                />
-              ) : (
-                <FontAwesomeIcon
-                  icon={faUser}
-                  className="text-[#228E8D] w-4 h-4"
-                />
-              )}
+              <AvatarWithFallback
+                avatarUrl={reply?.authorPhotoUrl || ""}
+                name={reply?.authorName || (reply?.isOwner ? "Host" : "Utente")}
+                alt={reply?.authorName || "Utente"}
+                className="w-6 h-6 rounded-full border border-[#228E8D]"
+                initialsClassName="text-[10px]"
+                imageClassName="rounded-full"
+              />
               <span className="font-medium text-[#228E8D]">
                 {reply?.authorName || (reply?.isOwner ? "Host" : "Utente")}
               </span>

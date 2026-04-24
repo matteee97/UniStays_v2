@@ -5,10 +5,8 @@ import { toast } from "sonner";
 import compressAndUploadImages from "@/infrastructure/firebase/adapters/compressAndUploadImages";
 import fetchUserData from "../fetches/fetchUserData";
 import { getCoordinates } from "@/ui/helpers/getCoordinates";
-import { ApartmentAggregateCalculator } from "@/core/services/ApartmentAggregateCalculator";
 import { ApartmentValidator } from "@/core/services/ApartmentValidator";
 import { createApartmentFormDraft } from "@/core/valueObjects/apartmentFormDraft";
-import { APARTMENT_STATUS } from "@/shared/types";
 import { FirestoreApartmentRepository } from "@/infrastructure/firebase/repositories/FirestoreApartmentRepository";
 import { FirestoreRoomRepository } from "@/infrastructure/firebase/repositories/FirestoreRoomRepository";
 import { updateNestedField } from "./nestedFormUtils";
@@ -150,15 +148,16 @@ export default function usePubblicaAnnuncioForm({
                 isAvailableNow: Boolean(room.availability?.isAvailableNow),
                 availableFrom,
               },
+              occupancy: room.occupancy || {},
+              occupantIds: Array.isArray(room.occupantIds)
+                ? room.occupantIds.filter(Boolean)
+                : [],
               photoUrls,
               notes: room.notes?.trim() || "",
             },
           };
         })
       );
-
-      const roomsPayload = roomUploads.map((entry) => entry.data);
-      const aggregates = ApartmentAggregateCalculator.calculate(roomsPayload);
 
       const isAgency = Boolean(formData.ownerDetails?.isAgency);
       const firstName = formData.ownerDetails?.firstName?.trim();
@@ -204,27 +203,6 @@ export default function usePubblicaAnnuncioForm({
         apartmentPhotoUrls: uploadedApartmentPhotos,
         ownerId: user?.id || null,
         ownerSnapshot: snapshot,
-        status: APARTMENT_STATUS.PENDING_REVIEW,
-        isFeatured: false,
-        aggregates: {
-          minRoomPrice: aggregates.minRoomPrice,
-          maxRoomPrice: aggregates.maxRoomPrice,
-          totalRooms: aggregates.totalRooms,
-          totalRoomsAvailable: aggregates.totalRoomsAvailable,
-          roomTypes: aggregates.roomTypes || [],
-          isAvailableNow: aggregates.isAvailableNow,
-          availableFromMin: aggregates.availableFromMin,
-        },
-        metrics: {
-          totalViews: 0,
-          likesCount: 0,
-          totalReports: 0,
-          reviewsCount: 0,
-          ratingSum: 0,
-          ratingAvg: 0,
-          ratingCount: 0,
-          score: null,
-        },
       };
 
       const ownerPublicOverrides = getOwnerInfo

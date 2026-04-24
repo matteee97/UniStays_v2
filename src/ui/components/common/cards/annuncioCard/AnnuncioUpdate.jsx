@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { VALIDATION } from "@/shared/types";
 import AnnuncioRoomsModal from "./AnnuncioRoomsModal";
 import AnnuncioApartmentModal from "./AnnuncioApartmentModal";
+import AnnuncioOccupantsModal from "./AnnuncioOccupantsModal";
 import { FirestoreApartmentRepository } from "@/infrastructure/firebase/repositories/FirestoreApartmentRepository";
 
 export default function AnnuncioUpdate({
@@ -12,6 +13,8 @@ export default function AnnuncioUpdate({
   aggiornaAnnuncio,
   setRoomsModalOpen,
   roomsModalOpen,
+  occupantsModalOpen,
+  setOccupantsModalOpen,
   apartmentModalOpen,
   setApartmentModalOpen,
 }) {
@@ -69,6 +72,15 @@ export default function AnnuncioUpdate({
           >
             Modifica info appartamento
           </button>
+
+          <button
+            onClick={() => setOccupantsModalOpen(true)}
+            aria-label="Gestisci coinquilini"
+            type="button"
+            className="border max-w-64 text-[#228E8D] border-[#228E8D] hover:bg-[#228E8D] hover:text-white font-semibold px-4 py-2 rounded-full transition-colors duration-200"
+          >
+            Gestisci coinquilini
+          </button>
         </div>
 
         <button
@@ -86,8 +98,8 @@ export default function AnnuncioUpdate({
         totalAreaMq={annuncio?.features?.totalAreaMq}
         isOpen={roomsModalOpen}
         onClose={() => setRoomsModalOpen(false)}
-        onRoomsUpdated={(aggregates) =>
-          aggiornaAnnuncio({ ...annuncio, aggregates })
+        onRoomsUpdated={(updated) =>
+          aggiornaAnnuncio({ ...annuncio, ...(updated || {}) })
         }
       />
       <AnnuncioApartmentModal
@@ -95,6 +107,14 @@ export default function AnnuncioUpdate({
         isOpen={apartmentModalOpen}
         onClose={() => setApartmentModalOpen(false)}
         onApartmentUpdated={(updated) =>
+          aggiornaAnnuncio({ ...annuncio, ...updated })
+        }
+      />
+      <AnnuncioOccupantsModal
+        annuncioId={annuncio?.id}
+        isOpen={occupantsModalOpen}
+        onClose={() => setOccupantsModalOpen(false)}
+        onOccupantsUpdated={(updated) =>
           aggiornaAnnuncio({ ...annuncio, ...updated })
         }
       />

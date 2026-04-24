@@ -10,6 +10,8 @@ export default function AnnuncioCardContent({
   setUpdateMode,
   roomsModalOpen,
   setRoomsModalOpen,
+  occupantsModalOpen,
+  setOccupantsModalOpen,
   apartmentModalOpen,
   setApartmentModalOpen,
 }) {
@@ -48,6 +50,8 @@ export default function AnnuncioCardContent({
             aggiornaAnnuncio={(updated) => setAnnuncioState(updated)}
             setRoomsModalOpen={setRoomsModalOpen}
             roomsModalOpen={roomsModalOpen}
+            occupantsModalOpen={occupantsModalOpen}
+            setOccupantsModalOpen={setOccupantsModalOpen}
             apartmentModalOpen={apartmentModalOpen}
             setApartmentModalOpen={setApartmentModalOpen}
           />

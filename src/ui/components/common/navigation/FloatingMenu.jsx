@@ -144,13 +144,8 @@ export default function FloatingMenu({ menuRef, setMenuOpen, ...props }) {
           </li>
           <li>
             <GoToButton
-              onClick={async () => {
-                try {
-                  await handleLogout();
-                  setMenuOpen(false);
-                } catch (error) {
-                  console.error("Logout failed", error);
-                }
+              onClick={() => {
+                handleLogout().then(setMenuOpen(false), );
               }}
               role="menuitem"
               icon={<LogoutIcon className={"w-5 h-5"} />}

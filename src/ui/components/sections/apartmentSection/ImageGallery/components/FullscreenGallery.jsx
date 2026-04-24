@@ -104,6 +104,7 @@ export default function FullscreenGallery({
               disabled={!canPrev}
               ariaLabel="Precedente"
               className="left-3 py-2 px-2"
+              glassEffect={false}
             >
               &#10094;
             </PrevButton>
@@ -112,6 +113,7 @@ export default function FullscreenGallery({
               disabled={!canNext}
               ariaLabel="Successiva"
               className="right-3 py-2 px-2"
+              glassEffect={false}
             >
               &#10095;
             </NextButton>

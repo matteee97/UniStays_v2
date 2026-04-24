@@ -1,4 +1,4 @@
-export const LEGAL_LAST_UPDATED = "20 febbraio 2026";
+export const LEGAL_LAST_UPDATED = "6 marzo 2026";
 
 export const LEGAL_CONTACT = {
   brandName: "UniStays",

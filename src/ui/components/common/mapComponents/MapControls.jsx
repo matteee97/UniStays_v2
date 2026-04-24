@@ -1,5 +1,3 @@
-import GlassContainer from "../containers/GlassContainer";
-
 export default function MapControls({ mapRef, isStreetViewVisible }) {
   const handleFullscreen = () => {
     const mapDiv = mapRef.current.getDiv();

@@ -17,7 +17,7 @@ export function InfoSectionCard({
   return (
     <Component
       id={id}
-      className={`rounded-3xl border border-[#d4f1ef] shadow-sm ${
+      className={`rounded-[36px] border border-[#d4f1ef] shadow-sm ${
         VARIANTS[variant] || ""
       } ${className}`}
       {...props}

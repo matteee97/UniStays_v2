@@ -108,5 +108,5 @@ export { default as WhiteContainer } from "./containers/WhiteContainer";
 export { default as GreenDivider } from "./dividers/GreenDivider";
 export { default as SectionTitle } from "./texts/SectionTitle";
 export { default as Text } from "./texts/Text";
-export { default as LegalLinks } from "./LegalLinks";
+export { default as LegalLinks } from "./legal/LegalLinks.jsx";
 export { default as ImageWithSkeleton } from "./ImageWithSkeleton";

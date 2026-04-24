@@ -1,5 +1,6 @@
 import { ERROR_MESSAGES } from "@/shared/types";
 import { validators } from "./useFormValidation";
+import { ROOM_OCCUPANCY_STATUS } from "../../../shared/types";
 
 const getRoomPhotosCount = (room) => {
   const filesCount = Array.isArray(room?.photoFiles)
@@ -51,6 +52,39 @@ export const buildRoomsValidationRules = (
       ];
       rules[`rooms.${index}.furnishing`] = [
         validators.required("Seleziona l'arredamento della stanza"),
+      ];
+      rules[`rooms.${index}.occupancy.status`] = [
+        validators.required("Seleziona lo stato occupazione della stanza"),
+        validators.custom(
+          (value, currentFormData) => {
+            const isAvailableNow = currentFormData?.rooms?.[index].availability.isAvailableNow;
+            return isAvailableNow && value !== ROOM_OCCUPANCY_STATUS.OCCUPIED || !isAvailableNow && value === ROOM_OCCUPANCY_STATUS.OCCUPIED;
+          }
+          ,
+          "Lo stato occupazione della stanza non puo essere modificato se non corrisponde con la disponibilita."
+        )
+      ];
+      rules[`rooms.${index}.occupancy.capacityTotal`] = [
+        validators.required(ERROR_MESSAGES.REQUIRED),
+        validators.numeric(ERROR_MESSAGES.NUMERIC),
+        validators.min(1, ERROR_MESSAGES.MIN(1)),
+      ];
+      rules[`rooms.${index}.occupancy.spotsOccupied`] = [
+        validators.required(ERROR_MESSAGES.REQUIRED),
+        validators.numeric(ERROR_MESSAGES.NUMERIC),
+        validators.min(0, ERROR_MESSAGES.MIN(0)),
+        validators.custom(
+          (value, currentFormData) => {
+            const room = currentFormData?.rooms?.[index];
+            const capacity = Number(room?.occupancy?.capacityTotal);
+            const occupied = Number(value);
+            if (!Number.isFinite(capacity) || !Number.isFinite(occupied)) {
+              return false;
+            }
+            return occupied <= capacity;
+          },
+          "I posti occupati non possono superare la capienza."
+        ),
       ];
       rules[`rooms.${index}.photoFiles`] = [
         validators.custom(

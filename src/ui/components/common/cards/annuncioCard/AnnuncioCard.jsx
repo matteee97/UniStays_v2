@@ -15,6 +15,7 @@ export default function AnnuncioCard({
   const [hover, setHover] = useState(false);
   const [updateMode, setUpdateMode] = useState(false);
   const [roomsModalOpen, setRoomsModalOpen] = useState(false);
+  const [occupantsModalOpen, setOccupantsModalOpen] = useState(false);
   const [apartmentModalOpen, setApartmentModalOpen] = useState(false);
 
   useEffect(() => {
@@ -37,7 +38,9 @@ export default function AnnuncioCard({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => {
         setHover(false);
-        if (!roomsModalOpen && !apartmentModalOpen) setUpdateMode(false);
+        if (!roomsModalOpen && !apartmentModalOpen && !occupantsModalOpen) {
+          setUpdateMode(false);
+        }
       }}
     >
       <div
@@ -74,6 +77,8 @@ export default function AnnuncioCard({
           setUpdateMode={setUpdateMode}
           roomsModalOpen={roomsModalOpen}
           setRoomsModalOpen={setRoomsModalOpen}
+          occupantsModalOpen={occupantsModalOpen}
+          setOccupantsModalOpen={setOccupantsModalOpen}
           apartmentModalOpen={apartmentModalOpen}
           setApartmentModalOpen={setApartmentModalOpen}
         />

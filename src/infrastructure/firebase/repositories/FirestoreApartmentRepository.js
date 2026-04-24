@@ -38,32 +38,6 @@ const convertTimestamp = (timestamp) => {
   return timestamp;
 };
 
-const parseDateValue = (value) => {
-  if (!value) return null;
-  if (value?.toDate) return value.toDate();
-  if (value instanceof Date) return value;
-  if (typeof value === "string" || typeof value === "number") {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-  return null;
-};
-
-const toStartOfDayTimestamp = (value) => {
-  const parsed = parseDateValue(value);
-  if (!parsed) return null;
-  const day = new Date(parsed);
-  day.setHours(0, 0, 0, 0);
-  return day.getTime();
-};
-
-const isSameDayOrPast = (value, referenceDate = new Date()) => {
-  const valueTs = toStartOfDayTimestamp(value);
-  const referenceTs = toStartOfDayTimestamp(referenceDate);
-  if (valueTs == null || referenceTs == null) return false;
-  return valueTs <= referenceTs;
-};
-
 const normalizeMetrics = (metrics = {}) =>
   Object.fromEntries(
     Object.entries(metrics).map(([key, value]) => [
@@ -74,7 +48,7 @@ const normalizeMetrics = (metrics = {}) =>
 
 const normalizeAggregates = (aggregates = null) => {
   if (!aggregates || typeof aggregates !== "object") return aggregates;
-  const normalized = Object.fromEntries(
+  return Object.fromEntries(
     Object.entries(aggregates).map(([key, value]) => {
       if (value?.toDate || value instanceof Date) {
         return [key, convertTimestamp(value)];
@@ -82,15 +56,6 @@ const normalizeAggregates = (aggregates = null) => {
       return [key, value];
     })
   );
-
-  if (
-    normalized?.isAvailableNow !== true &&
-    isSameDayOrPast(normalized?.availableFromMin)
-  ) {
-    normalized.isAvailableNow = true;
-  }
-
-  return normalized;
 };
 
 const normalizeOwnerSnapshot = (ownerSnapshot = null) => {
@@ -157,23 +122,6 @@ export const FirestoreApartmentRepository = {
   getRef: getApartmentRef,
   createRef: createApartmentRef,
   createId: () => createApartmentRef().id,
-  async create(apartmentId, payload) {
-    if (!apartmentId) {
-      throw new Error("Apartment ID mancante.");
-    }
-    if (!payload || typeof payload !== "object") {
-      throw new Error("Dati appartamento non validi.");
-    }
-
-    await callBackendApi("/v1/apartments", {
-      method: "POST",
-      body: {
-        apartmentId,
-        apartmentData: payload,
-        roomsData: [],
-      },
-    });
-  },
   async getById(apartmentId) {
     if (!apartmentId) {
       throw new Error("Apartment ID mancante.");
@@ -200,7 +148,7 @@ export const FirestoreApartmentRepository = {
     apartmentId,
     apartmentData,
     roomsData = [],
-    ownerId, // kept for compatibility with existing callers
+    ownerId,
     ownerPublicOverrides = null,
     ownerPrivateOverrides = null,
   }) {
@@ -358,7 +306,7 @@ export const FirestoreApartmentRepository = {
       throw new Error("Apartment ID mancante.");
     }
 
-    await callBackendApi(`/v1/apartments/${apartmentId}/description`, {
+    return callBackendApi(`/v1/apartments/${apartmentId}/description`, {
       method: "PATCH",
       body: { description },
     });
@@ -371,12 +319,12 @@ export const FirestoreApartmentRepository = {
       throw new Error("Dati appartamento non validi.");
     }
 
-    await callBackendApi(`/v1/apartments/${apartmentId}`, {
+    return callBackendApi(`/v1/apartments/${apartmentId}`, {
       method: "PATCH",
       body: { payload },
     });
   },
-  async updateRoomsAndAggregates(apartmentId, roomUpdates = [], aggregates) {
+  async updateRooms(apartmentId, roomUpdates = []) {
     if (!apartmentId) {
       throw new Error("Apartment ID mancante.");
     }
@@ -397,11 +345,26 @@ export const FirestoreApartmentRepository = {
       };
     });
 
-    await callBackendApi(`/v1/apartments/${apartmentId}/rooms`, {
+    return callBackendApi(`/v1/apartments/${apartmentId}/rooms`, {
       method: "PATCH",
       body: {
         roomUpdates: normalizedRoomUpdates,
-        aggregates,
+      },
+    });
+  },
+  async updateOccupants(
+    apartmentId,
+    { occupantUpserts = [], occupantDeletes = [] } = {}
+  ) {
+    if (!apartmentId) {
+      throw new Error("Apartment ID mancante.");
+    }
+
+    return callBackendApi(`/v1/apartments/${apartmentId}/occupants`, {
+      method: "PATCH",
+      body: {
+        occupantUpserts: Array.isArray(occupantUpserts) ? occupantUpserts : [],
+        occupantDeletes: Array.isArray(occupantDeletes) ? occupantDeletes : [],
       },
     });
   },

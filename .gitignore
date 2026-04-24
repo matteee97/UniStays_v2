@@ -33,3 +33,11 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Local recovery artifacts
+.git_corrupted/
+
+.git_corrupted/
+
+output
+tmp

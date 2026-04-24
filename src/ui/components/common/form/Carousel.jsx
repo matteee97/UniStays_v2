@@ -20,7 +20,7 @@ export default function Carousel({
   const handlePrev = () => {
     setDirection("prev");
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? (isMobile ? images.length - 1 : 0) : prevIndex - 1
+      prevIndex === 0 ? (isMobile ? images.length - 1 : 0) : prevIndex - 1,
     );
   };
 
@@ -31,7 +31,7 @@ export default function Carousel({
         ? isMobile
           ? 0
           : prevIndex
-        : prevIndex + 1
+        : prevIndex + 1,
     );
   };
 
@@ -149,16 +149,18 @@ export default function Carousel({
         <PrevButton
           onClick={handlePrev}
           className={
-            "hidden sm:block left-5 opacity-85 hover:opacity-100 text-2xl z-40"
+            "hidden sm:block left-5 !p-2 opacity-85 hover:opacity-100 text-2xl z-40"
           }
+          glassEffect={false}
         >
           &#10094;
         </PrevButton>
         <NextButton
           onClick={handleNext}
           className={
-            "hidden sm:block right-5 opacity-85 hover:opacity-100 text-2xl z-40"
+            "hidden sm:block right-5 !p-2 opacity-85 hover:opacity-100 text-2xl z-40"
           }
+          glassEffect={false}
         >
           &#10095;
         </NextButton>

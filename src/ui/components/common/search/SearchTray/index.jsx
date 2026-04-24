@@ -300,30 +300,25 @@ export default function SearchTray() {
     [updateDraftFilters],
   );
 
-  const resolveTargetCity = useCallback(() => {
-    const fallbackCityFromSearch =
-      searchTerm?.trim?.().length > 0 ? flatCities?.[activeIndex] : null;
-
-    return selectedCityByDropDown || selectedCity || fallbackCityFromSearch || null;
-  }, [
-    activeIndex,
-    flatCities,
-    searchTerm,
-    selectedCity,
-    selectedCityByDropDown,
-  ]);
-
   const applyFilters = useCallback(
     (
       uiFilters = draftUiFilters,
       {
         closeSearchPanel = false,
         closeModal = false,
-        navigateToSelectedCity = true,
+        navigateToSelectedCity = false,
       } = {},
     ) => {
-      const targetCity = resolveTargetCity();
-      const cityName = targetCity?.city || null;
+      const fallbackCityFromSearch =
+        searchTerm?.trim?.().length > 0
+          ? flatCities?.[activeIndex]?.city
+          : null;
+      const targetCity =
+        selectedCityByDropDown ||
+        selectedCity ||
+        fallbackCityFromSearch ||
+        null;
+      const cityName = targetCity?.city;
       if (!cityName) return;
 
       const normalized = normalizeApartmentFilters(uiFilters);
@@ -350,27 +345,24 @@ export default function SearchTray() {
       }
     },
     [
+      activeIndex,
       buildFilters,
       draftUiFilters,
-      resolveTargetCity,
+      flatCities,
       goTo,
+      searchTerm,
+      selectedCity,
       cityCoords,
       setActiveFilters,
     ],
   );
 
   const handleResetFilters = useCallback(() => {
-    const targetCity = resolveTargetCity();
-
     setDraftUiFilters(normalizeApartmentFilters(APARTMENT_FILTER_DEFAULTS));
     setActiveFilters(null);
     setShowFilters(false);
     setOpenSegment(null);
-
-    if (targetCity?.city) {
-      goTo(targetCity, "");
-    }
-  }, [goTo, resolveTargetCity, setActiveFilters]);
+  }, [setActiveFilters]);
 
   return (
     <div className="block">
@@ -575,17 +567,7 @@ export default function SearchTray() {
                   {filtersActive && (
                     <button
                       className="bg-white px-3 py-1.5 border border-[#d4f1ef] rounded-full text-xs text-gray-500 flex items-center justify-center gap-2"
-                      onClick={() => {
-                        setDraftUiFilters(
-                          normalizeApartmentFilters(APARTMENT_FILTER_DEFAULTS),
-                        );
-                        setActiveFilters(null);
-
-                        const targetCity = resolveTargetCity();
-                        if (targetCity?.city) {
-                          goTo(targetCity, "");
-                        }
-                      }}
+                      onClick={() => setActiveFilters(null)}
                     >
                       Rimuovi filtri{" "}
                       <span className="inline-flex h-4 w-4 items-center justify-center rounded-full  px-1 text-[10px] font-semibold bg-[#228E8D] text-white">
@@ -604,6 +586,8 @@ export default function SearchTray() {
         <Modal
           id="modal-filters"
           onClose={() => setShowFilters(false)}
+          disableEffects
+          disableDistortion
           imgUrl="/icons/filter.webp"
           title="Filtri"
         >
@@ -617,7 +601,6 @@ export default function SearchTray() {
                 applyFilters(nextFilters, {
                   closeSearchPanel: false,
                   closeModal: options.closeModal ?? true,
-                  navigateToSelectedCity: options.navigateToSelectedCity ?? true,
                 })
               }
               onCloseFilters={() => setShowFilters(false)}

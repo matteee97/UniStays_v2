@@ -1,4 +1,5 @@
 import React from "react";
+import GlassContainer from "@/ui/components/common/containers/GlassContainer.jsx";
 
 const NextButton = ({
   children,
@@ -6,6 +7,7 @@ const NextButton = ({
   onClick,
   disabled = false,
   ariaLabel = "Mostra elementi successivi",
+  glassEffect = true,
   ...props
 }) => {
   return (
@@ -14,10 +16,20 @@ const NextButton = ({
       disabled={disabled}
       aria-label={ariaLabel}
       aria-disabled={disabled}
-      className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full bg-white/75 px-1 text-lg font-semibold text-[#115756] transition duration-300 hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-40 z-20 ${className}`}
+      className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center ${!glassEffect ? " bg-white/75 backdrop-blur px-1 text-[#115756] " : "text-gray-700"} rounded-full text-lg font-semibold shadow-md   disabled:cursor-not-allowed disabled:hidden z-20 ${className}`}
       {...props}
     >
-      {children}
+      {glassEffect ? (
+        <GlassContainer
+          preset={"frost"}
+          radius={"full"}
+          className={"py-3 px-2"}
+        >
+          {children}
+        </GlassContainer>
+      ) : (
+        children
+      )}
     </button>
   );
 };
