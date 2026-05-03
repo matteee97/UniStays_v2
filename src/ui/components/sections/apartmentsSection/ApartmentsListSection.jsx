@@ -4,10 +4,12 @@ import ApartmentCard from "@/ui/components/common/cards/ApartmentCard";
 import PageNavigation from "@/ui/components/common/form/PageNavigation";
 import EmptyResults from "@/ui/components/common/messages/EmptyResults";
 import SmallCard from "@/ui/components/common/cards/SmallCard";
+import RoomSearchCard from "@/ui/components/common/cards/RoomSearchCard";
 import { useNavigateToCity } from "@/ui/hooks";
 import LocalStorageToggleButton from "@/ui/components/common/buttons/LocalStorageToggleButton";
 import { useUser } from "@clerk/clerk-react";
 import { HeartToggle } from "../../common";
+import { SEARCH_MODES } from "@/application/filters/searchModeQuery";
 
 function ApartmentsListSkeleton({ detailedCard = true }) {
   const cardCount = detailedCard ? 6 : 8;
@@ -72,7 +74,11 @@ export default function ApartmentsListSection({
   favoritesIds,
   filtersActive = false,
   setActiveFilters,
+  searchMode = SEARCH_MODES.APARTMENTS,
+  cityCoords = null,
+  onRoomResultClick,
 }) {
+  const isRoomSearch = searchMode === SEARCH_MODES.ROOMS;
   const hasKnownTotalCount =
     Number.isFinite(totalCount) && Number(totalCount) >= 0;
   const safeLoadedCount =
@@ -92,8 +98,16 @@ export default function ApartmentsListSection({
       ? displayCount
       : app.length + limit * (paginaCorrente - 1);
   const countLabel = hasKnownTotalCount
-    ? `${visibleCount} di ${totalCount} annunc${totalCount === 1 ? "io" : "i"}`
-    : `${visibleCount}${allLoaded ? "" : "+"} annunc${visibleCount === 1 ? "io" : "i"}`;
+    ? `${visibleCount} di ${totalCount} ${
+        isRoomSearch
+          ? `stanz${totalCount === 1 ? "a" : "e"}`
+          : `annunc${totalCount === 1 ? "io" : "i"}`
+      }`
+    : `${visibleCount}${allLoaded ? "" : "+"} ${
+        isRoomSearch
+          ? `stanz${visibleCount === 1 ? "a" : "e"}`
+          : `annunc${visibleCount === 1 ? "io" : "i"}`
+      }`;
   const shouldShowInitialSkeleton = showLoading && app.length === 0 && !error;
 
   const handleClick = (app) => {
@@ -120,12 +134,14 @@ export default function ApartmentsListSection({
               {countLabel}
               {city && university && " a " + city + " - " + university}
             </p>
-            <LocalStorageToggleButton
-              label="Vista dettagliata"
-              storageKey={storageKey}
-              value={detailedCard}
-              onChange={setDetailedCard}
-            />
+            {!isRoomSearch && (
+              <LocalStorageToggleButton
+                label="Vista dettagliata"
+                storageKey={storageKey}
+                value={detailedCard}
+                onChange={setDetailedCard}
+              />
+            )}
           </div>
           {error && (
             <Alert
@@ -154,13 +170,24 @@ export default function ApartmentsListSection({
           )}
           <div
             className={`grid ${
-              detailedCard
+              isRoomSearch
+                ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
+                : detailedCard
                 ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
                 : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
             } gap-y-12 gap-x-3 w-full`}
           >
             {app.map((app) =>
-              detailedCard ? (
+              isRoomSearch ? (
+                <RoomSearchCard
+                  key={app.id}
+                  result={app}
+                  cityCoords={cityCoords}
+                  onHover={(apartmentId) => setHoveredApartmentId(apartmentId)}
+                  onHoverOut={() => setHoveredApartmentId(null)}
+                  onClick={onRoomResultClick}
+                />
+              ) : detailedCard ? (
                 <ApartmentCard
                   key={app.id}
                   app={app}

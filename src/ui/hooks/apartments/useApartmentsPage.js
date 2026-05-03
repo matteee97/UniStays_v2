@@ -13,12 +13,18 @@ import {
 } from "@/infrastructure/firebase/queries/apartmentQueries";
 import { normalizeCoordinates } from "@/application/mappers/coordinates";
 import { useApartmentsFilters } from "@/ui/hooks/apartments/useApartmentsFilters";
+import useRoomSearchResults from "@/ui/hooks/rooms/useRoomSearchResults";
 import useFavoriteIds from "@/ui/hooks/favorites/useFavoriteIds";
 import {
   APARTMENT_FILTER_DEFAULTS,
   normalizeApartmentFilters,
 } from "@/application/filters/apartmentFilters";
+import { createRoomCandidateApartmentMatcher } from "@/application/filters/roomSearchFilters";
 import { extractApartmentFiltersFromSearchParams } from "@/application/filters/apartmentFiltersQuery";
+import {
+  getSearchModeFromSearchParams,
+  SEARCH_MODES,
+} from "@/application/filters/searchModeQuery";
 import { createApartmentFilters } from "@/application/useCases/createApartmentFilters";
 import { createGuidedSearchFilterPlan } from "@/application/useCases/createGuidedSearchFilterPlan";
 import { getSmartFiltersPrompt } from "@/application/filters/smartFiltersQuery";
@@ -122,6 +128,11 @@ export const useApartmentsPage = () => {
     () => getSmartFiltersPrompt(searchParams),
     [searchParams]
   );
+  const searchMode = useMemo(
+    () => getSearchModeFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const isRoomSearch = searchMode === SEARCH_MODES.ROOMS;
   const parsedUrlFilters = useMemo(
     () => extractApartmentFiltersFromSearchParams(searchParams),
     [searchParams]
@@ -143,6 +154,19 @@ export const useApartmentsPage = () => {
   const buildSearchFilters = useMemo(
     () => createApartmentFilters({ queryBuilder: buildApartmentsFiltersQuery }),
     []
+  );
+  const roomCandidateMatcher = useMemo(
+    () => createRoomCandidateApartmentMatcher(uiFilters, cityCoords),
+    [cityCoords, uiFilters],
+  );
+  const applyRoomCandidateFilters = useCallback(
+    (apartments) => {
+      if (!roomCandidateMatcher || !Array.isArray(apartments)) {
+        return apartments;
+      }
+      return apartments.filter(roomCandidateMatcher);
+    },
+    [roomCandidateMatcher],
   );
   const appliedUrlFiltersRef = useRef("");
   const appliedSmartPromptRef = useRef("");
@@ -213,6 +237,7 @@ export const useApartmentsPage = () => {
       queryScope: {
         screen: "apartments-page",
         citySlug: selectedCity?.slug || city || "",
+        mode: searchMode,
         filters: uiFilters || null,
       },
       progressiveMode: true,
@@ -220,8 +245,21 @@ export const useApartmentsPage = () => {
         min: 40,
         max: 60,
       },
-      applyClientFilters,
+      applyClientFilters: isRoomSearch
+        ? applyRoomCandidateFilters
+        : applyClientFilters,
     });
+
+  const {
+    rooms: roomSearchResults,
+    loading: roomSearchLoading,
+    error: roomSearchError,
+  } = useRoomSearchResults({
+    enabled: isRoomSearch,
+    candidateApartments: appartamenti,
+    filters: uiFilters,
+    cityCoords,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -264,34 +302,49 @@ export const useApartmentsPage = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [effectiveConstraints, uiFilters, fetchLimit, selectedCity?.slug]);
+  }, [effectiveConstraints, uiFilters, fetchLimit, selectedCity?.slug, searchMode]);
 
   useEffect(() => {
     window.scrollTo({
       top: 0,
       behavior: "instant",
     });
-  }, [activeFilters, currentPage, selectedCity?.slug]);
+  }, [activeFilters, currentPage, selectedCity?.slug, searchMode]);
 
-  const { pageItems: currentPageApartments } = usePaginationSlice({
-    items: appartamenti,
+  const listItems = isRoomSearch ? roomSearchResults : appartamenti;
+  const { pageItems: currentPageItems } = usePaginationSlice({
+    items: listItems,
     page: currentPage,
     pageSize: fetchLimit,
   });
-  const filteredPageApartments = currentPageApartments;
+  const filteredPageApartments = currentPageItems;
+  const resolvedTotalCount =
+    isRoomSearch && allLoaded && !roomSearchLoading
+      ? roomSearchResults.length
+      : isRoomSearch
+        ? null
+        : totalCount;
+  const loadedResultsCount = isRoomSearch
+    ? roomSearchResults.length
+    : appartamenti.length;
+  const resolvedAllLoaded = isRoomSearch
+    ? allLoaded && !roomSearchLoading
+    : allLoaded;
+  const resolvedError = isRoomSearch ? error || roomSearchError : error;
   const hasKnownTotalCount =
-    typeof totalCount === "number" && Number.isFinite(totalCount);
+    typeof resolvedTotalCount === "number" &&
+    Number.isFinite(resolvedTotalCount);
   const displayCount = useMemo(() => {
     const offset = (currentPage - 1) * fetchLimit;
     const base = offset + filteredPageApartments.length;
     if (!hasKnownTotalCount) return base;
-    return Math.min(totalCount, base);
+    return Math.min(resolvedTotalCount, base);
   }, [
     currentPage,
     fetchLimit,
     filteredPageApartments.length,
     hasKnownTotalCount,
-    totalCount,
+    resolvedTotalCount,
   ]);
 
   const toggleMap = useCallback(() => {
@@ -313,6 +366,24 @@ export const useApartmentsPage = () => {
     [appartamenti, cityImage]
   );
 
+  const handleRoomResultClick = useCallback(
+    (result) => {
+      const apartment = result?.apartment;
+      const roomId = result?.roomId;
+      if (!apartment || !roomId) return;
+
+      const citySlug = selectedCity?.slug || city || "";
+
+      navigate(
+        `/alloggi/${citySlug}/${apartment.id}?roomId=${encodeURIComponent(
+          roomId,
+        )}#section-stanze`,
+        { state: { fromInternal: true } },
+      );
+    },
+    [city, navigate, selectedCity?.slug],
+  );
+
   return {
     citiesError,
     cityImage,
@@ -323,16 +394,16 @@ export const useApartmentsPage = () => {
       app: filteredPageApartments,
       city: selectedCity?.city || "",
       university: selectedCity?.university || "",
-      showLoading: loading || favoritesLoading,
-      error,
+      showLoading: loading || favoritesLoading || roomSearchLoading,
+      error: resolvedError,
       setHoveredApartmentId,
       limit: fetchLimit,
       loadMore,
       paginaCorrente: currentPage,
       setPaginaCorrente: setCurrentPage,
-      totalCount,
-      allLoaded,
-      loadedCount: appartamenti.length,
+      totalCount: resolvedTotalCount,
+      allLoaded: resolvedAllLoaded,
+      loadedCount: loadedResultsCount,
       displayCount,
       filtersActive,
       setActiveFilters,
@@ -341,10 +412,22 @@ export const useApartmentsPage = () => {
       storageKey,
       favoritesIds: favorites,
       alwaysStickyNavigation: true,
+      searchMode,
+      cityCoords,
+      onRoomResultClick: handleRoomResultClick,
     },
     mapSection: {
       mapVisible,
-      appartamenti: filteredPageApartments,
+      appartamenti: isRoomSearch
+        ? Array.from(
+            new Map(
+              filteredPageApartments.map((result) => [
+                result.apartmentId,
+                result.apartment,
+              ]),
+            ).values(),
+          )
+        : filteredPageApartments,
       matchedCity: selectedCity,
       favoritesIds: favorites,
       hoveredApartmentId,

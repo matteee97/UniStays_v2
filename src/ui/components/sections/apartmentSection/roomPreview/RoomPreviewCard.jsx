@@ -8,7 +8,12 @@ import {
   formatRoomPrice,
 } from "./roomPreviewUtils";
 
-export default function RoomPreviewCard({ room, roomIndex, onOpen }) {
+export default function RoomPreviewCard({
+  room,
+  roomIndex,
+  selected = false,
+  onOpen,
+}) {
   const roomDetails = room.room || {};
   const priceLabel = formatRoomPrice(roomDetails?.priceMonthly);
   const areaLabel = formatRoomArea(roomDetails?.areaMq);
@@ -19,6 +24,7 @@ export default function RoomPreviewCard({ room, roomIndex, onOpen }) {
     <div className="flex h-full flex-col space-y-1">
       <CardBase
         onClick={onOpen}
+        isHighlighted={selected}
         borderColor="border-[#d4f1ef]"
         className="group h-full cursor-pointer !rounded-[32px]"
         imageSection={

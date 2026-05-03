@@ -29,6 +29,7 @@ export { useTrackApartmentView } from './apartment/useTrackApartmentView';
 export { useApartmentsFilters } from './apartments/useApartmentsFilters';
 export { useApartmentsPage } from './apartments/useApartmentsPage';
 export { useDetailedCardPreference } from './apartments/useDetailedCardPreference';
+export { default as useRoomSearchResults } from './rooms/useRoomSearchResults';
 
 // Fetch Hooks
 export {

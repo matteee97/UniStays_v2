@@ -25,6 +25,7 @@ import { AMENITIES_OPTIONS } from "../constants";
 import FormDatePicker from "@/ui/components/common/form/FormDatePicker";
 import { DISTANCES } from "@/shared/types";
 import {toIsoDate} from "@/shared/utils/date.utils.js";
+import { SEARCH_MODES } from "@/application/filters/searchModeQuery";
 
 const clamp = (value, min, max) =>
   Math.min(Math.max(Number(value) || 0, min), max);
@@ -53,7 +54,9 @@ export default function Filters({
   onApplyFilters,
   onCloseFilters,
   onResetFilters,
+  searchMode = SEARCH_MODES.APARTMENTS,
 }) {
+  const isRoomSearch = searchMode === SEARCH_MODES.ROOMS;
   const canUseDistance =
     Number.isFinite(cityCoords?.lat) && Number.isFinite(cityCoords?.lng);
 
@@ -204,22 +207,32 @@ export default function Filters({
         sectionKey={FILTER_SECTION_KEYS.ROOMS}
         isOpen={openSections[FILTER_SECTION_KEYS.ROOMS]}
         onToggle={handleSectionToggle}
-        title="Camere e spazi"
-        subtitle="Trova alloggi con il giusto numero di stanze e spazi."
+        title={isRoomSearch ? "Stanza" : "Camere e spazi"}
+        subtitle={
+          isRoomSearch
+            ? "Filtra le singole stanze per tipologia, prezzo e disponibilita."
+            : "Trova alloggi con il giusto numero di stanze e spazi."
+        }
       >
         <div className="space-y-4">
-          <RangeSlider
-            label="Camere totali"
-            value={resolvedDraft.roomsRange}
-            minValue={APARTMENT_FILTER_DEFAULTS.roomsRange[0]}
-            maxValue={APARTMENT_FILTER_LIMITS.roomsMax}
-            onChange={(next) => updateDraftFilters({ roomsRange: next })}
-          />
+          {!isRoomSearch && (
+            <RangeSlider
+              label="Camere totali"
+              value={resolvedDraft.roomsRange}
+              minValue={APARTMENT_FILTER_DEFAULTS.roomsRange[0]}
+              maxValue={APARTMENT_FILTER_LIMITS.roomsMax}
+              onChange={(next) => updateDraftFilters({ roomsRange: next })}
+            />
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CounterBox
-              label="Stanze disponibili"
-              innerText="stanze"
-              description="Numero minimo di stanze libere."
+              label={isRoomSearch ? "Posti disponibili" : "Stanze disponibili"}
+              innerText={isRoomSearch ? "posti" : "stanze"}
+              description={
+                isRoomSearch
+                  ? "Numero minimo di posti liberi nella stanza."
+                  : "Numero minimo di stanze libere."
+              }
               icon={<FontAwesomeIcon icon={faUserGroup} />}
               value={resolvedDraft.availableRoomsMin}
               setValue={(nextValue) =>
@@ -271,7 +284,7 @@ export default function Filters({
             />
           </div>
           <RangeSlider
-            label="Superficie minima"
+            label={isRoomSearch ? "Superficie stanza minima" : "Superficie minima"}
             simbol=" mq"
             minValue={APARTMENT_FILTER_LIMITS.areaMinMq}
             maxValue={APARTMENT_FILTER_LIMITS.areaMaxMq}

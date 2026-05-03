@@ -57,7 +57,12 @@ function MapSectionSkeleton() {
   );
 }
 
-export default function ApartmentInfo({ app, rooms = [] }) {
+export default function ApartmentInfo({
+  app,
+  rooms = [],
+  selectedRoomId = null,
+  onRoomSelect,
+}) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [roomSectionsRef, shouldLoadOccupants] = useDeferredInView({
@@ -153,6 +158,8 @@ export default function ApartmentInfo({ app, rooms = [] }) {
               rooms={resolvedRooms}
               occupants={resolvedOccupants}
               utilitiesIncluded={features?.utilitiesIncluded}
+              selectedRoomId={selectedRoomId}
+              onRoomSelect={onRoomSelect}
             />
           </Suspense>
         ) : (

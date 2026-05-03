@@ -13,6 +13,8 @@ export default function RoomPreviewSection({
   rooms = [],
   occupants = [],
   utilitiesIncluded = false,
+  selectedRoomId = null,
+  onRoomSelect,
 }) {
   const [activeRoomIndex, setActiveRoomIndex] = useState(null);
   const [activeRoommateId, setActiveRoommateId] = useState(null);
@@ -38,6 +40,10 @@ export default function RoomPreviewSection({
   if (!normalizedRooms.length) return null;
 
   const handleOpenRoom = (roomIndex) => {
+    const selectedRoom = normalizedRooms[roomIndex];
+    if (selectedRoom?.id) {
+      onRoomSelect?.(selectedRoom.id);
+    }
     setActiveRoommateId(null);
     setActiveRoomIndex(roomIndex);
   };
@@ -67,6 +73,7 @@ export default function RoomPreviewSection({
               key={room.id}
               room={room}
               roomIndex={roomIndex}
+              selected={selectedRoomId === room.id}
               onOpen={() => handleOpenRoom(roomIndex)}
             />
           ))}

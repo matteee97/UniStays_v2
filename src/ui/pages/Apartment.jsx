@@ -7,7 +7,7 @@ import {
   useRef,
   useCallback,
 } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { toast } from "sonner";
 
@@ -93,11 +93,13 @@ function ApartmentPageSkeleton() {
 
 export default function ApartmentPage() {
   const { apartmentId } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useUser();
   const userID = user?.id;
   const [startDate, setStartDate] = useState(null);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [forceLoadRooms, setForceLoadRooms] = useState(false);
+  const requestedRoomId = searchParams.get("roomId");
 
   const navigationLinks = useMemo(
     () => [
@@ -206,10 +208,23 @@ export default function ApartmentPage() {
     }
   }, [invalidApartmentId]);
 
+  useEffect(() => {
+    if (requestedRoomId) {
+      setForceLoadRooms(true);
+    }
+  }, [requestedRoomId]);
+
   const socialLinks = useSocialLinks("Guarda questo annuncio!");
   useEffect(() => {
     if (!rooms.length) {
       if (selectedRoomId) setSelectedRoomId(null);
+      return;
+    }
+    if (
+      requestedRoomId &&
+      rooms.some((room, index) => getRoomKey(room, index) === requestedRoomId)
+    ) {
+      setSelectedRoomId(requestedRoomId);
       return;
     }
     if (rooms.length === 1) {
@@ -222,7 +237,7 @@ export default function ApartmentPage() {
     if (!hasSelection && selectedRoomId) {
       setSelectedRoomId(null);
     }
-  }, [rooms, selectedRoomId, getRoomKey]);
+  }, [rooms, selectedRoomId, getRoomKey, requestedRoomId]);
 
   const selectedRoomInfo = useMemo(() => {
     if (!rooms.length) return null;
@@ -331,12 +346,21 @@ export default function ApartmentPage() {
     const roomImages = rooms.flatMap((room) => room.photoUrls || []);
     return [...apartmentImages, ...roomImages];
   }, [apartmentImages, rooms]);
-  const scrollToSection = (targetId) => {
+  const scrollToSection = useCallback((targetId) => {
     const el = document.getElementById(targetId);
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - 80;
     window.scrollTo({ top, behavior: "smooth" });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!requestedRoomId || roomsLoading || !rooms.length) return;
+    const hasRequestedRoom = rooms.some(
+      (room, index) => getRoomKey(room, index) === requestedRoomId,
+    );
+    if (!hasRequestedRoom) return;
+    scrollToSection("section-stanze");
+  }, [getRoomKey, requestedRoomId, rooms, roomsLoading, scrollToSection]);
 
   if (invalidApartmentId) {
     return (
@@ -400,7 +424,12 @@ export default function ApartmentPage() {
               >
                 {/* Left section - Info */}
                 <div className="lg:col-span-2 space-y-8 ">
-                  <ApartmentInfo app={apartmentViewModel} rooms={rooms} />
+                  <ApartmentInfo
+                    app={apartmentViewModel}
+                    rooms={rooms}
+                    selectedRoomId={selectedRoomId}
+                    onRoomSelect={setSelectedRoomId}
+                  />
 
                   <GreenDivider />
                 </div>

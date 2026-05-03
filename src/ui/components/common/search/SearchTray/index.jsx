@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBed,
@@ -35,6 +28,7 @@ import {
   normalizeApartmentFilters,
 } from "@/application/filters/apartmentFilters";
 import { buildApartmentFiltersQuery } from "@/application/filters/apartmentFiltersQuery";
+import { withSearchModeQuery } from "@/application/filters/searchModeQuery";
 import { createApartmentFilters } from "@/application/useCases/createApartmentFilters";
 import { buildApartmentsFiltersQuery } from "@/infrastructure/firebase/queries/apartmentQueries";
 import {
@@ -43,7 +37,9 @@ import {
 } from "@/ui/components/sections/apartmentsSection/filters/roomTypeOptions";
 import useNavigateToCity from "@/ui/hooks/interactives/useNavigateToCity";
 
+import ActiveAnchor from "./ActiveAnchor";
 import SearchSegment from "./SearchSegment";
+import useRelativeAnchorLayout from "./useRelativeAnchorLayout";
 import { useSelector } from "react-redux";
 import FormDatePicker from "../../form/FormDatePicker";
 import { APARTMENTS } from "@/shared/types";
@@ -76,7 +72,15 @@ const formatShortDate = (value) => {
  * - one shared floating panel that moves between segments
  * - compact/expanded segment behavior
  */
-export default function SearchTray() {
+/**
+ * @param {"apartments" | "rooms"} searchMode - Determines if searching for entire apartments or single rooms
+ */
+export default function SearchTray({
+  onExpandedChange,
+  searchMode = "apartments",
+  outsideClickExceptSelector = null,
+}) {
+  const isRoomSearch = searchMode === "rooms";
   const selectedCity = useSelector((state) => state.city.selectedCity);
   const goTo = useNavigateToCity();
   const cityCoords = useMemo(
@@ -99,8 +103,6 @@ export default function SearchTray() {
   const [draftUiFilters, setDraftUiFilters] = useState(
     normalizedInitialFilters,
   );
-  const [activeAnchor, setActiveAnchor] = useState(null);
-  const [panelLayout, setPanelLayout] = useState(null);
 
   const trayRef = useRef(null);
   const segmentRefs = useRef({});
@@ -166,72 +168,55 @@ export default function SearchTray() {
       ? `Dal ${formatShortDate(availabilityFrom)}`
       : "Disponibilità";
     const roomType = ROOM_TYPE_LABELS[roomTypeValue] || "Qualsiasi";
-    const room =
-      bedrooms > APARTMENTS.MIN_ROOMS
-        ? `${bedrooms}+ stanze • ${roomType}`
-        : roomType;
+    const room = isRoomSearch
+      ? bedrooms > APARTMENTS.MIN_ROOMS
+        ? `${bedrooms}+ posti • ${roomType}`
+        : roomType
+      : "Intero appartamento";
+    const roomDescription = isRoomSearch
+      ? "Camere e tipologia"
+      : "Tipologia alloggio";
     const filters = filtersBadge ? `${filtersBadge} filtri` : "Filtri smart";
 
-    return { destination, dates, room, filters };
-  }, [city, draftUiFilters, filtersBadge]);
+    return { destination, dates, room, roomDescription, filters };
+  }, [city, draftUiFilters, filtersBadge, isRoomSearch]);
 
-  const updateFloatingLayout = useCallback((segmentKey) => {
+  const activeSegmentRef = useMemo(
+    () => ({
+      get current() {
+        return openSegment ? segmentRefs.current[openSegment] || null : null;
+      },
+    }),
+    [openSegment],
+  );
+
+  const activeSegmentLayout = useRelativeAnchorLayout({
+    containerRef: trayRef,
+    targetRef: activeSegmentRef,
+    enabled: Boolean(openSegment),
+  });
+
+  const currentPanelLayout = useMemo(() => {
     const trayNode = trayRef.current;
-    const segmentNode = segmentRefs.current[segmentKey];
-    if (!trayNode || !segmentNode) return;
+    if (!openSegment || !trayNode || !activeSegmentLayout) return null;
 
+    const preferredWidth = PANEL_WIDTH[openSegment] ?? 360;
     const trayRect = trayNode.getBoundingClientRect();
-    const segmentRect = segmentNode.getBoundingClientRect();
-
-    const nextAnchor = {
-      left: segmentRect.left - trayRect.left,
-      width: segmentRect.width,
-    };
-
-    setActiveAnchor((prev) => {
-      if (
-        prev &&
-        Math.abs(prev.left - nextAnchor.left) < 0.5 &&
-        Math.abs(prev.width - nextAnchor.width) < 0.5
-      ) {
-        return prev;
-      }
-      return nextAnchor;
-    });
-
-    const preferredWidth = PANEL_WIDTH[segmentKey] ?? 360;
     const maxWidth = Math.max(280, trayRect.width - 8);
     const width = Math.min(preferredWidth, maxWidth);
-    const center = nextAnchor.left + nextAnchor.width / 2;
+    const center = activeSegmentLayout.left + activeSegmentLayout.width / 2;
     const left = clamp(
       center - width / 2,
       4,
       Math.max(4, trayRect.width - width - 4),
     );
-    const top = segmentRect.bottom - trayRect.top + 12;
-    const nextPanelLayout = { left, top, width };
 
-    lastPanelLayoutRef.current = nextPanelLayout;
-    setPanelLayout(nextPanelLayout);
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!openSegment) return;
-    updateFloatingLayout(openSegment);
-  }, [openSegment, updateFloatingLayout]);
-
-  useEffect(() => {
-    if (!openSegment) return;
-
-    const syncLayout = () => updateFloatingLayout(openSegment);
-    window.addEventListener("resize", syncLayout);
-    window.addEventListener("scroll", syncLayout, true);
-
-    return () => {
-      window.removeEventListener("resize", syncLayout);
-      window.removeEventListener("scroll", syncLayout, true);
+    return {
+      left,
+      top: activeSegmentLayout.top + activeSegmentLayout.height + 12,
+      width,
     };
-  }, [openSegment, updateFloatingLayout]);
+  }, [activeSegmentLayout, openSegment]);
 
   useEffect(() => {
     if (openSegment) {
@@ -239,17 +224,29 @@ export default function SearchTray() {
     }
   }, [openSegment]);
 
+  useEffect(() => {
+    if (currentPanelLayout) {
+      lastPanelLayoutRef.current = currentPanelLayout;
+    }
+  }, [currentPanelLayout]);
+
   useClickOutside(
     trayRef,
     () => setOpenSegment(null),
-    null,
+    outsideClickExceptSelector,
     Boolean(openSegment),
   );
 
   const panelSegment = openSegment || lastPanelSegmentRef.current;
-  const resolvedPanelLayout = panelLayout || lastPanelLayoutRef.current;
+  const resolvedPanelLayout = currentPanelLayout || lastPanelLayoutRef.current;
   const isPanelVisible = Boolean(openSegment && resolvedPanelLayout);
   const isExpanded = Boolean(openSegment);
+
+  useEffect(() => {
+    onExpandedChange?.(isExpanded);
+
+    return () => onExpandedChange?.(false);
+  }, [isExpanded, onExpandedChange]);
 
   const toggleSegment = useCallback((segmentKey) => {
     setOpenSegment((current) => (current === segmentKey ? null : segmentKey));
@@ -340,7 +337,10 @@ export default function SearchTray() {
       }
 
       if (navigateToSelectedCity) {
-        const filtersQuery = buildApartmentFiltersQuery(normalized);
+        const filtersQuery = withSearchModeQuery(
+          buildApartmentFiltersQuery(normalized),
+          searchMode,
+        );
         goTo(targetCity, filtersQuery);
       }
     },
@@ -351,7 +351,9 @@ export default function SearchTray() {
       flatCities,
       goTo,
       searchTerm,
+      searchMode,
       selectedCity,
+      selectedCityByDropDown,
       cityCoords,
       setActiveFilters,
     ],
@@ -368,30 +370,36 @@ export default function SearchTray() {
     <div className="block">
       <div
         ref={trayRef}
-        className="relative flex items-center rounded-full border-2 border-[#d4f1ef] bg-white p-1 shadow-[0_6px_30px_rgba(34,142,141,0.08)] transition-all duration-300 ease-linear"
+        className={`relative flex items-center rounded-full bg-white shadow-[0_6px_30px_rgba(34,142,141,0.08)] transition-all duration-300 ease-linear border-2 border-[#d4f1ef] p-1`}
       >
-        <div className="relative flex lg:min-w-[655px] flex-1 items-stretch gap-1">
-          {activeAnchor && (
-            <span
-              className={`pointer-events-none absolute bottom-0 h-full z-0 rounded-full bg-[#228E8D] shadow-[0_8px_20px_rgba(34,142,141,0.12)] transition-[transform,width,opacity] duration-300 ease-out ${
-                openSegment ? "opacity-100" : "opacity-0"
-              }`}
-              style={{
-                width: activeAnchor.width,
-                transform: `translate3d(${activeAnchor.left - 6}px, 0, 0)`,
-              }}
-            />
-          )}
+        <div
+          className={`relative flex flex-1 items-stretch gap-1 transition-[min-width] duration-300 ease-out ${
+            isExpanded ? "lg:min-w-[750px]" : "lg:w-[655px]"
+          }`}
+        >
+          <ActiveAnchor
+            active={Boolean(openSegment)}
+            containerRef={trayRef}
+            targetRef={activeSegmentRef}
+            className="bg-[#228E8D] shadow-[0_8px_20px_rgba(34,142,141,0.12)]"
+            offsetX={-6}
+            offsetY={-6}
+          />
 
           <SearchSegment
             ref={(node) => {
               segmentRefs.current.destination = node;
             }}
             label={labels.destination}
-            description="Città/università"
+            description={"Città/università"}
             active={openSegment === "destination"}
             expanded={isExpanded}
-            icon={<FontAwesomeIcon icon={faMapMarkerAlt} className="h-3 w-3" />}
+            icon={
+              <FontAwesomeIcon
+                icon={faMapMarkerAlt}
+                className={isExpanded ? "h-4 w-4" : "h-3 w-3"}
+              />
+            }
             onClick={() => toggleSegment("destination")}
           />
 
@@ -403,7 +411,12 @@ export default function SearchTray() {
             description="A partire dal"
             active={openSegment === "dates"}
             expanded={isExpanded}
-            icon={<FontAwesomeIcon icon={faCalendarAlt} className="h-3 w-3" />}
+            icon={
+              <FontAwesomeIcon
+                icon={faCalendarAlt}
+                className={isExpanded ? "h-4 w-4" : "h-3 w-3"}
+              />
+            }
             onClick={() => toggleSegment("dates")}
             className={`hidden ${isExpanded ? "md:block" : "md:flex"}`}
           />
@@ -413,10 +426,15 @@ export default function SearchTray() {
               segmentRefs.current.room = node;
             }}
             label={labels.room}
-            description="Camere e tipologia"
+            description={labels.roomDescription}
             active={openSegment === "room"}
             expanded={isExpanded}
-            icon={<FontAwesomeIcon icon={faBed} className="h-3 w-3" />}
+            icon={
+              <FontAwesomeIcon
+                icon={faBed}
+                className={isExpanded ? "h-4 w-4" : "h-3 w-3"}
+              />
+            }
             onClick={() => toggleSegment("room")}
             className={`hidden ${isExpanded ? "lg:block" : "lg:flex"}`}
           />
@@ -430,24 +448,34 @@ export default function SearchTray() {
             active={openSegment === "filters"}
             expanded={isExpanded}
             badge={filtersBadge}
-            icon={<FontAwesomeIcon icon={faFilter} className="h-3 w-3" />}
+            icon={
+              <FontAwesomeIcon
+                icon={faFilter}
+                className={isExpanded ? "h-4 w-4" : "h-3 w-3"}
+              />
+            }
             onClick={() => toggleSegment("filters")}
           />
           <div
-            className={`relative flex items-center justify-center ${isExpanded || filtersBadge || selectedCity ? "min-w-0 hover:bg-[#228E8D]/10 " : "w-0"} rounded-full  transition-all duration-300 ease-out focus:outline-none overflow-hidden`}
+            className={`relative flex items-center justify-center ${isExpanded || filtersBadge || selectedCity ? "min-w-0 hover:bg-[#228E8D]/10 ml-2 " : "w-0"} rounded-full  transition-all duration-300 ease-out focus:outline-none overflow-hidden`}
           >
-            <button
+            <CoolButton
               type="button"
+              animated
               onClick={() =>
                 applyFilters(draftUiFilters, {
                   closeSearchPanel: true,
                   navigateToSelectedCity: true,
                 })
               }
-              className={`${isExpanded || filtersBadge || selectedCity ? "opacity-100 translate-x-0 w-full h-full blur-none" : "opacity-0 translate-x-full w-0 h-0 blur-md"} relative z-10 inline-flex items-center gap-2 rounded-full bg-[#228E8D] px-5 py-2 text-sm font-semibold text-white hover:bg-[#1d7f7e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#228E8D]/45 transition-all duration-200`}
+              className={`${isExpanded || filtersBadge || selectedCity ? "opacity-100 translate-x-0 w-full h-full blur-none" : "opacity-0 translate-x-full w-0 h-0 blur-md"} relative z-10 inline-flex items-center gap-2 ${isExpanded ? "px-6 py-3 text-xl" : "px-5 py-2 text-sm"}`}
             >
-              <FontAwesomeIcon icon={faSearch} className="h-4 w-4" />
-            </button>
+              {isExpanded ? <p className="text-base">Cerca</p> : ""}
+              <FontAwesomeIcon
+                icon={faSearch}
+                className={isExpanded ? "h-5 w-5" : "h-4 w-4"}
+              />
+            </CoolButton>
           </div>
         </div>
 
@@ -518,30 +546,39 @@ export default function SearchTray() {
             {panelSegment === "room" && (
               <div className="space-y-4">
                 <p className="text-sm font-semibold text-slate-600">
-                  Camere e tipologia
+                  {labels.roomDescription}
                 </p>
-                <CounterBox
-                  label="Stanze disponibili"
-                  innerText="stanze"
-                  value={draftUiFilters.availableRoomsMin}
-                  setValue={handleBedroomsChange}
-                  minValue={0}
-                  maxValue={6}
-                  isLowerBound
-                />
-                <FormSelect
-                  id="search-tray-room-type"
-                  name="searchRoomType"
-                  label="Tipologia stanza"
-                  options={ROOM_TYPE_OPTIONS}
-                  value={draftUiFilters.roomType}
-                  onChange={handleRoomTypeChange}
-                  placeholder="Qualsiasi tipologia"
-                  position="top-right"
-                  minWidth="min-w-48"
-                  bg="white"
-                  blur="none"
-                />
+                {isRoomSearch ? (
+                  <>
+                    <CounterBox
+                      label="Posti disponibili"
+                      innerText="posti"
+                      value={draftUiFilters.availableRoomsMin}
+                      setValue={handleBedroomsChange}
+                      minValue={0}
+                      maxValue={6}
+                      isLowerBound
+                    />
+                    <FormSelect
+                      id="search-tray-room-type"
+                      name="searchRoomType"
+                      label="Tipologia stanza"
+                      options={ROOM_TYPE_OPTIONS}
+                      value={draftUiFilters.roomType}
+                      onChange={handleRoomTypeChange}
+                      placeholder="Qualsiasi tipologia"
+                      position="top-right"
+                      minWidth="min-w-48"
+                      bg="white"
+                      blur="none"
+                    />
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Stai cercando un intero appartamento. Usa i filtri avanzati
+                    per affinare la ricerca per budget, distanza e servizi.
+                  </p>
+                )}
               </div>
             )}
 
@@ -595,6 +632,7 @@ export default function SearchTray() {
             <Filters
               matchedCity={selectedCity || null}
               cityCoords={cityCoords}
+              searchMode={searchMode}
               draftFilters={draftUiFilters}
               onDraftFiltersChange={setDraftUiFilters}
               onApplyFilters={(nextFilters, options = {}) =>
