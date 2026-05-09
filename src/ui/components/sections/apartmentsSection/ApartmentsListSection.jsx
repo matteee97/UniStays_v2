@@ -173,8 +173,8 @@ export default function ApartmentsListSection({
               isRoomSearch
                 ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
                 : detailedCard
-                ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
-                : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
+                  ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
+                  : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
             } gap-y-12 gap-x-3 w-full`}
           >
             {app.map((app) =>

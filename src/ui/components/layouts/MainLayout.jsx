@@ -1,4 +1,4 @@
-import Navbar from "@/ui/components/common/navigation/Navbar/Navbar";
+import { lazy, Suspense } from "react";
 import FooterSection from "@/ui/components/sections/footerSection/FooterSection";
 import ChatButton from "@/ui/components/common/chat/ChatButton";
 import { Outlet, useLocation } from "react-router-dom";
@@ -6,7 +6,11 @@ import AnalyticsListener from "@/ui/components/common/AnalyticsListener";
 import { useIsAdmin } from "@/ui/hooks";
 import { ROUTES } from "@/app/routes";
 
-const MainLayout = () => {
+const Navbar = lazy(
+  () => import("@/ui/components/common/navigation/Navbar/Navbar"),
+);
+
+const MainLayout = ({ showNavbar = true }) => {
   const location = useLocation();
 
   // Nascondi ChatButton su mobile nella pagina appartamento
@@ -18,7 +22,11 @@ const MainLayout = () => {
 
   return (
     <>
-      <Navbar />
+      {showNavbar && (
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
+      )}
       <main className="relative min-h-screen w-screen">
         <AnalyticsListener />
         <Outlet /> {/* le pagine si renderizzano qui */}

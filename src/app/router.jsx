@@ -56,10 +56,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: ROUTES.APARTMENT_DETAIL,
-        element: <LazyApartment />,
-      },
-      {
         path: ROUTES.ABOUT,
         element: (
           <Suspense fallback={<LoadingIcon />}>
@@ -154,6 +150,20 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingIcon />}>
             <LazyApartments />
+          </Suspense>
+        ),
+      },
+    ],
+  },
+  {
+    path: ROUTES.APARTMENT_DETAIL,
+    element: <MainLayout showNavbar={false} />,
+    children: [
+      {
+        index: true,
+        element: (
+          <Suspense fallback={<LoadingIcon />}>
+            <LazyApartment />
           </Suspense>
         ),
       },

@@ -62,13 +62,17 @@ export default function NavBar({ visibleAt = 140, setScrollToTop }) {
   useEffect(() => {
     if (!shouldShowNav) {
       closeUserMenu();
-      setIsSearchExpanded(false);
+      setIsSearchExpanded((current) => (current ? false : current));
     }
   }, [shouldShowNav, closeUserMenu]);
 
   useEffect(() => {
     setSearchMode(urlSearchMode || SEARCH_MODES.APARTMENTS);
   }, [urlSearchMode]);
+
+  useEffect(() => {
+    setIsSearchExpanded((current) => (current ? false : current));
+  }, [location.pathname]);
 
   return (
     <div className="relative">

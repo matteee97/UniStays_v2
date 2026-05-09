@@ -5,6 +5,21 @@ import HeartToggle from "@/ui/components/common/buttons/HeartToggle";
 import SocialShare from "./SocialShare";
 import { useLocation, useNavigate } from "react-router-dom";
 
+const buildListingSearch = (search) => {
+  const params = new URLSearchParams(search);
+  params.delete("roomId");
+
+  const serialized = params.toString();
+  return serialized ? `?${serialized}` : "";
+};
+
+const getListingSearchSource = (location) => {
+  const sourceSearch = location.state?.listingSearch;
+  return typeof sourceSearch === "string" && sourceSearch !== "?"
+    ? sourceSearch
+    : location.search;
+};
+
 export default function ApartmentHeader({
   app,
   userID,
@@ -16,6 +31,12 @@ export default function ApartmentHeader({
   const location = useLocation();
   const canGoBack = location.state?.fromInternal;
   const navigate = useNavigate();
+  const citySlug = encodeURIComponent(
+    [app?.address?.city, app?.address?.provinceCode].filter(Boolean).join("-"),
+  );
+  const citySearch = buildListingSearch(getListingSearchSource(location));
+  const cityPath = `/alloggi/${citySlug}${citySearch}`;
+
   return (
     <div className="bg-white border-b border-[#d4f1ef]">
       <div className="max-w-[2000px] mx-auto px-4 py-4">
@@ -38,11 +59,7 @@ export default function ApartmentHeader({
                   { label: "Alloggi", to: "/" },
                   {
                     label: app?.address?.city || "Città",
-                    to: `/alloggi/${encodeURIComponent(
-                      [app?.address?.city, app?.address?.provinceCode]
-                        .filter(Boolean)
-                        .join("-"),
-                    )}`,
+                    to: cityPath,
                   },
                   { label: "Dettagli" },
                 ]}

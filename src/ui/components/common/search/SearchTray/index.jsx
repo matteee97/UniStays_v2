@@ -181,6 +181,15 @@ export default function SearchTray({
     return { destination, dates, room, roomDescription, filters };
   }, [city, draftUiFilters, filtersBadge, isRoomSearch]);
 
+  useEffect(() => {
+    setOpenSegment((current) => {
+      if (!current) return current;
+      if (isRoomSearch) return current === "room" ? current : "room";
+      if (current === "room") return "destination";
+      return current;
+    });
+  }, [isRoomSearch]);
+
   const activeSegmentRef = useMemo(
     () => ({
       get current() {
@@ -421,23 +430,25 @@ export default function SearchTray({
             className={`hidden ${isExpanded ? "md:block" : "md:flex"}`}
           />
 
-          <SearchSegment
-            ref={(node) => {
-              segmentRefs.current.room = node;
-            }}
-            label={labels.room}
-            description={labels.roomDescription}
-            active={openSegment === "room"}
-            expanded={isExpanded}
-            icon={
-              <FontAwesomeIcon
-                icon={faBed}
-                className={isExpanded ? "h-4 w-4" : "h-3 w-3"}
-              />
-            }
-            onClick={() => toggleSegment("room")}
-            className={`hidden ${isExpanded ? "lg:block" : "lg:flex"}`}
-          />
+          {isRoomSearch && (
+            <SearchSegment
+              ref={(node) => {
+                segmentRefs.current.room = node;
+              }}
+              label={labels.room}
+              description={labels.roomDescription}
+              active={openSegment === "room"}
+              expanded={isExpanded}
+              icon={
+                <FontAwesomeIcon
+                  icon={faBed}
+                  className={isExpanded ? "h-4 w-4" : "h-3 w-3"}
+                />
+              }
+              onClick={() => toggleSegment("room")}
+              className={`hidden ${isExpanded ? "lg:block" : "lg:flex"}`}
+            />
+          )}
 
           <SearchSegment
             ref={(node) => {

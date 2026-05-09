@@ -23,7 +23,7 @@ const SearchSegment = forwardRef(
   ) => {
     const widthClass = expanded
       ? "flex-1 px-4 py-1.5"
-      : "flex-1 flex justify-center items-center px-3";
+      : "flex-1 flex justify-center items-center gap-0.5 px-3";
 
     return (
       <button

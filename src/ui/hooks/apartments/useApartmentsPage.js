@@ -373,15 +373,22 @@ export const useApartmentsPage = () => {
       if (!apartment || !roomId) return;
 
       const citySlug = selectedCity?.slug || city || "";
+      const detailParams = new URLSearchParams(searchParams);
+      detailParams.set("mode", SEARCH_MODES.ROOMS);
+      detailParams.set("roomId", roomId);
+      const detailSearch = detailParams.toString();
 
       navigate(
-        `/alloggi/${citySlug}/${apartment.id}?roomId=${encodeURIComponent(
-          roomId,
-        )}#section-stanze`,
-        { state: { fromInternal: true } },
+        `/alloggi/${citySlug}/${apartment.id}?${detailSearch}#section-stanze`,
+        {
+          state: {
+            fromInternal: true,
+            listingSearch: `?${searchParams.toString()}`,
+          },
+        },
       );
     },
-    [city, navigate, selectedCity?.slug],
+    [city, navigate, searchParams, selectedCity?.slug],
   );
 
   return {

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useMemo, useRef } from "react";
+import ActiveAnchor from "../search/SearchTray/ActiveAnchor";
 
 const PageNavigation = ({
   paginaCorrente = 1,
@@ -10,6 +11,8 @@ const PageNavigation = ({
 }) => {
   const hasKnownTotalPages =
     Number.isFinite(numeroPagine) && Number(numeroPagine) > 0;
+
+  const containerRef = useRef(null);
 
   const clampPage = (page) =>
     Math.min(Math.max(page, 1), Math.max(numeroPagine, 1));
@@ -52,6 +55,17 @@ const PageNavigation = ({
     return pages;
   };
 
+  const activeRef = useMemo(
+    () => ({
+      get current() {
+        return containerRef.current?.querySelector(
+          `[data-tab-id="${paginaCorrente}"]`,
+        );
+      },
+    }),
+    [paginaCorrente],
+  );
+
   const renderButton = (page) => {
     if (typeof page !== "number") {
       return (
@@ -65,13 +79,14 @@ const PageNavigation = ({
     return (
       <button
         key={page}
+        data-tab-id={page}
         type="button"
         onClick={() => emitChange(page)}
         aria-current={isActive ? "page" : undefined}
-        className={`w-8 h-8 rounded-full text-sm font-semibold transition-colors ${
+        className={`w-8 h-8 z-10 rounded-full text-sm font-semibold transition-colors ${
           isActive
-            ? "bg-[#228E8D] text-white shadow-xl"
-            : "text-gray-700 hover:bg-gray-100"
+            ? " text-white shadow-xl"
+            : "text-gray-700 hover:bg-[#228E8D]/10"
         }`}
       >
         {page}
@@ -99,7 +114,14 @@ const PageNavigation = ({
         ‹
       </button>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 relative " ref={containerRef}>
+        <ActiveAnchor
+          active
+          containerRef={containerRef}
+          targetRef={activeRef}
+          className="bg-[#228E8D] "
+        />
+
         {hasKnownTotalPages ? (
           buildPages().map(renderButton)
         ) : (
