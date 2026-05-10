@@ -22,7 +22,6 @@ const TabNavigation = ({ tabs, activeTab, onTabChange }) => {
             active
             containerRef={chipRef}
             targetRef={activeButtonRef}
-            className="bg-[#228E8D] "
           />
           {tabs.map((tab) => (
             <button

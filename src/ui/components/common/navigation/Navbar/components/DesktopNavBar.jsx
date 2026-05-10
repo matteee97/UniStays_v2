@@ -1,8 +1,8 @@
-import { useMemo, useRef } from "react";
-
 import PlatformNotifications from "../../PlatformNotifications";
 import UserMenuFloatingButton from "@/ui/components/common/navigation/UserMenuFloatingButton";
-import ActiveAnchor from "@/ui/components/common/search/SearchTray/ActiveAnchor";
+import SearchModeSwitch, {
+  SEARCH_MODE_SWITCH_ATTR,
+} from "@/ui/components/common/search/SearchModeSwitch";
 import FavoritesLink from "./FavoritesLink";
 import LogoLink from "./LogoLink";
 import SearchBar from "./SearchBar";
@@ -10,71 +10,6 @@ import { NAV_CLASS_NAME, PATTERN_OVERLAY_CLASS } from "./navBarClasses";
 
 const NAVBAR_MOTION_CLASS =
   "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]";
-const SEARCH_MODE_CHIP_ATTR = "data-search-mode-chip";
-
-function SearchModeChip({ mode, onChange }) {
-  const isApartments = mode === "apartments";
-  const chipRef = useRef(null);
-  const apartmentsButtonRef = useRef(null);
-  const roomsButtonRef = useRef(null);
-  const activeButtonRef = useMemo(
-    () => ({
-      get current() {
-        return isApartments
-          ? apartmentsButtonRef.current
-          : roomsButtonRef.current;
-      },
-    }),
-    [isApartments],
-  );
-
-  return (
-    <div
-      ref={chipRef}
-      {...{ [SEARCH_MODE_CHIP_ATTR]: "true" }}
-      className="relative z-20 mx-auto flex items-center rounded-full border-2 border-[#d4f1ef] bg-white gap-2 p-1 shadow-[0_10px_30px_rgba(34,142,141,0.12)] transition-[box-shadow,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-    >
-      <ActiveAnchor
-        active
-        containerRef={chipRef}
-        targetRef={activeButtonRef}
-        className="bg-[#228E8D] "
-        offsetX={-6}
-        offsetY={-6}
-      />
-      <button
-        ref={apartmentsButtonRef}
-        type="button"
-        onClick={() => onChange("apartments")}
-        className={`relative z-10 rounded-full p-1 transition-opacity duration-200 ${
-          isApartments ? "opacity-100" : "opacity-50 hover:opacity-80"
-        }`}
-        aria-label="Ricerca per alloggi"
-      >
-        <img
-          src="/img/3D/common/house.png"
-          alt="Alloggi"
-          className="h-9 w-9 object-contain drop-shadow-md"
-        />
-      </button>
-      <button
-        ref={roomsButtonRef}
-        type="button"
-        onClick={() => onChange("rooms")}
-        className={`relative z-10 hover:bg-[#228E8D]/10 rounded-full p-1 transition-opacity duration-200 ${
-          !isApartments ? "opacity-100" : "opacity-50 hover:opacity-80"
-        }`}
-        aria-label="Ricerca per camere"
-      >
-        <img
-          src="/img/3D/common/bed.png"
-          alt="Camere"
-          className="h-9 w-9 object-contain drop-shadow-md"
-        />
-      </button>
-    </div>
-  );
-}
 
 /**
  * Desktop navigation bar with the full search tray and desktop-only actions.
@@ -133,7 +68,10 @@ export default function DesktopNavBar({
                   : "pointer-events-none max-h-0 -translate-y-3 scale-95 opacity-0")
               }
             >
-              <SearchModeChip mode={searchMode} onChange={onSearchModeChange} />
+              <SearchModeSwitch
+                mode={searchMode}
+                onChange={onSearchModeChange}
+              />
             </div>
 
             <div
@@ -149,7 +87,7 @@ export default function DesktopNavBar({
                 expanded={isSearchExpanded}
                 onExpandedChange={onSearchExpandedChange}
                 searchMode={searchMode}
-                outsideClickExceptSelector={`[${SEARCH_MODE_CHIP_ATTR}]`}
+                outsideClickExceptSelector={`[${SEARCH_MODE_SWITCH_ATTR}]`}
               />
               <div className="relative z-20 flex w-fit items-center justify-between gap-4 px-2">
                 <div className="flex items-center gap-4 rounded-2xl">

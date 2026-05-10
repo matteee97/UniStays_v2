@@ -37,6 +37,7 @@ const LazyTermsAndConditionsPage = lazy(
 
 import MainLayout from "@/ui/components/layouts/MainLayout.jsx";
 import AuthLayout from "@/ui/components/layouts/AuthLayout.jsx";
+import DetailLayout from "@/ui/components/layouts/DetailLayout.jsx";
 const LazyHostApartmentsPage = lazy(
   () => import("@/ui/pages/HostApartmentsPage.jsx"),
 );
@@ -157,7 +158,7 @@ export const router = createBrowserRouter([
   },
   {
     path: ROUTES.APARTMENT_DETAIL,
-    element: <MainLayout showNavbar={false} />,
+    element: <DetailLayout />,
     children: [
       {
         index: true,

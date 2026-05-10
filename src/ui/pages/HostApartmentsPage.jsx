@@ -7,7 +7,6 @@ import {
   fetchUserData,
   useFetchAppartamenti,
   usePaginationSlice,
-  useDetailedCardPreference,
   useIsVerifiedHost,
 } from "@/ui/hooks";
 import { Alert, LoadingIcon } from "@/ui/components/common";
@@ -31,11 +30,6 @@ export default function HostApartmentsPage() {
   const userID = parsedHostParams?.userId || null;
   const [proprietario, setProprietario] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
-  const { detailedCard, setDetailedCard, storageKey } =
-    useDetailedCardPreference({
-      storageKey: "detailedCard",
-      defaultValue: false,
-    });
   const [pagina, setPagina] = useState(1);
   const { favorites, loading: favoriteLoading } = useFavoriteIds();
   const fetchLimit = 12;
@@ -194,12 +188,9 @@ export default function HostApartmentsPage() {
               loadMore={loadMore}
               paginaCorrente={pagina}
               setPaginaCorrente={setPagina}
-              detailedCard={detailedCard}
-              setDetailedCard={setDetailedCard}
-              storageKey={storageKey}
               favoritesIds={favorites}
               alwaysStickyNavigation
-              showCity
+              showSearchModeSwitch={false}
             />
           ) : (
             <EmptyResults />

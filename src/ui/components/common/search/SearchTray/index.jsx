@@ -198,6 +198,21 @@ export default function SearchTray({
     }),
     [openSegment],
   );
+  const anchorDragTargets = useMemo(() => {
+    const createSegmentTarget = (id) => ({
+      id,
+      get current() {
+        return segmentRefs.current[id] || null;
+      },
+    });
+
+    return [
+      createSegmentTarget("destination"),
+      createSegmentTarget("dates"),
+      ...(isRoomSearch ? [createSegmentTarget("room")] : []),
+      createSegmentTarget("filters"),
+    ];
+  }, [isRoomSearch]);
 
   const activeSegmentLayout = useRelativeAnchorLayout({
     containerRef: trayRef,
@@ -390,9 +405,12 @@ export default function SearchTray({
             active={Boolean(openSegment)}
             containerRef={trayRef}
             targetRef={activeSegmentRef}
-            className="bg-[#228E8D] shadow-[0_8px_20px_rgba(34,142,141,0.12)]"
+            className="bg-[#228E8D] active:bg-[#064241] shadow-[0_8px_20px_rgba(34,142,141,0.12)]"
             offsetX={-6}
             offsetY={-6}
+            bubble
+            dragTargets={anchorDragTargets}
+            onDragSnap={setOpenSegment}
           />
 
           <SearchSegment

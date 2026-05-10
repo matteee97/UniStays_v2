@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 
 import { useChat } from "@/ui/hooks";
 import {
-  getSearchModeFromSearchParams,
+  getExplicitSearchModeFromSearchParams,
   SEARCH_MODES,
 } from "@/application/filters/searchModeQuery";
 
@@ -33,11 +33,16 @@ export default function NavBar({ visibleAt = 140, setScrollToTop }) {
   const location = useLocation();
   const { unreadCount } = useChat();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const urlSearchMode = useMemo(
-    () => getSearchModeFromSearchParams(new URLSearchParams(location.search)),
+  const explicitUrlSearchMode = useMemo(
+    () =>
+      getExplicitSearchModeFromSearchParams(
+        new URLSearchParams(location.search),
+      ),
     [location.search],
   );
-  const [searchMode, setSearchMode] = useState(urlSearchMode);
+  const [searchMode, setSearchMode] = useState(
+    explicitUrlSearchMode || SEARCH_MODES.APARTMENTS,
+  );
 
   const isApartmentDetailPage = isApartmentDetailPath(location.pathname);
   const isApartmentsListingPage = isApartmentsListingPath(location.pathname);
@@ -67,8 +72,10 @@ export default function NavBar({ visibleAt = 140, setScrollToTop }) {
   }, [shouldShowNav, closeUserMenu]);
 
   useEffect(() => {
-    setSearchMode(urlSearchMode || SEARCH_MODES.APARTMENTS);
-  }, [urlSearchMode]);
+    if (explicitUrlSearchMode) {
+      setSearchMode(explicitUrlSearchMode);
+    }
+  }, [explicitUrlSearchMode]);
 
   useEffect(() => {
     setIsSearchExpanded((current) => (current ? false : current));

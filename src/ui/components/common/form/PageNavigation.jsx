@@ -119,7 +119,6 @@ const PageNavigation = ({
           active
           containerRef={containerRef}
           targetRef={activeRef}
-          className="bg-[#228E8D] "
         />
 
         {hasKnownTotalPages ? (

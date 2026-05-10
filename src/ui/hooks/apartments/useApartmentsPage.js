@@ -24,16 +24,16 @@ import { extractApartmentFiltersFromSearchParams } from "@/application/filters/a
 import {
   getSearchModeFromSearchParams,
   SEARCH_MODES,
+  withSearchModeQuery,
 } from "@/application/filters/searchModeQuery";
 import { createApartmentFilters } from "@/application/useCases/createApartmentFilters";
 import { createGuidedSearchFilterPlan } from "@/application/useCases/createGuidedSearchFilterPlan";
 import { getSmartFiltersPrompt } from "@/application/filters/smartFiltersQuery";
-import { useDetailedCardPreference } from "@/ui/hooks/apartments/useDetailedCardPreference";
 import { usePaginationSlice } from "@/ui/hooks/ui/usePaginationSlice";
 
 const FALLBACK_CITY_IMAGE = "/img/home/hero-img(1).webp";
 const TOUCH_SCROLL_TIP_MESSAGE =
-  "Per scorrere le immagini in modalità dettagliata ti basta fare swipe verso sinistra o destra sulle immagini degli appartamenti.";
+  "Per scorrere le immagini degli appartamenti ti basta fare swipe verso sinistra o destra.";
 
 /**
  * Orchestrates the apartments listing page state and side effects.
@@ -55,14 +55,7 @@ export const useApartmentsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { favorites, loading: favoritesLoading } = useFavoriteIds();
-  const { detailedCard, setDetailedCard, storageKey } =
-    useDetailedCardPreference({
-      storageKey: "detailedCard",
-      defaultValue: true,
-    });
-
-  const initialLimit = PAGINATION.DEFAULT_PAGE_SIZE;
-  const fetchLimit = detailedCard ? initialLimit : initialLimit * (initialLimit/2);
+  const fetchLimit = PAGINATION.DEFAULT_PAGE_SIZE;
 
   const {
     cities,
@@ -366,6 +359,26 @@ export const useApartmentsPage = () => {
     [appartamenti, cityImage]
   );
 
+  const handleSearchModeChange = useCallback(
+    (nextMode) => {
+      const normalizedMode =
+        nextMode === SEARCH_MODES.ROOMS
+          ? SEARCH_MODES.ROOMS
+          : SEARCH_MODES.APARTMENTS;
+      if (normalizedMode === searchMode) return;
+
+      const citySlug = selectedCity?.slug || city || "";
+      if (!citySlug) return;
+
+      const nextSearch = withSearchModeQuery(
+        searchParams.toString(),
+        normalizedMode,
+      );
+      navigate(`/alloggi/${citySlug}${nextSearch}`);
+    },
+    [city, navigate, searchMode, searchParams, selectedCity?.slug],
+  );
+
   const handleRoomResultClick = useCallback(
     (result) => {
       const apartment = result?.apartment;
@@ -414,14 +427,12 @@ export const useApartmentsPage = () => {
       displayCount,
       filtersActive,
       setActiveFilters,
-      detailedCard,
-      setDetailedCard,
-      storageKey,
       favoritesIds: favorites,
       alwaysStickyNavigation: true,
       searchMode,
       cityCoords,
       onRoomResultClick: handleRoomResultClick,
+      onSearchModeChange: handleSearchModeChange,
     },
     mapSection: {
       mapVisible,

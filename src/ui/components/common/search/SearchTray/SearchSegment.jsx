@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 
 const BASE_CLASSES =
-  "relative min-w-0 rounded-full text-left group hover:bg-[#228E8D]/10 transition-all duration-300 ease-out focus:outline-none";
+  "relative min-w-0 rounded-full text-left group touch-none select-none hover:bg-[#228E8D]/10 transition-all duration-300 ease-out focus:outline-none";
 
 /**
  * Search tray segment button with compact/expanded rendering states.

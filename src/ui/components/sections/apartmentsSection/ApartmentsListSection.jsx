@@ -3,17 +3,13 @@ import Alert from "@/ui/components/common/messages/Alert";
 import ApartmentCard from "@/ui/components/common/cards/ApartmentCard";
 import PageNavigation from "@/ui/components/common/form/PageNavigation";
 import EmptyResults from "@/ui/components/common/messages/EmptyResults";
-import SmallCard from "@/ui/components/common/cards/SmallCard";
 import RoomSearchCard from "@/ui/components/common/cards/RoomSearchCard";
 import { useNavigateToCity } from "@/ui/hooks";
-import LocalStorageToggleButton from "@/ui/components/common/buttons/LocalStorageToggleButton";
+import SearchModeSwitch from "@/ui/components/common/search/SearchModeSwitch";
 import { useUser } from "@clerk/clerk-react";
-import { HeartToggle } from "../../common";
 import { SEARCH_MODES } from "@/application/filters/searchModeQuery";
 
-function ApartmentsListSkeleton({ detailedCard = true }) {
-  const cardCount = detailedCard ? 6 : 8;
-
+function ApartmentsListSkeleton() {
   return (
     <div aria-hidden="true">
       <div className="flex flex-col gap-4 sm:flex-row justify-between sm:items-center">
@@ -21,14 +17,8 @@ function ApartmentsListSkeleton({ detailedCard = true }) {
         <div className="h-10 w-40 rounded-full bg-[#d4f1ef]/55" />
       </div>
 
-      <div
-        className={`mt-6 grid ${
-          detailedCard
-            ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
-            : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
-        } gap-y-12 gap-x-3 w-full`}
-      >
-        {Array.from({ length: cardCount }).map((_, index) => (
+      <div className="mt-6 grid w-full grid-cols-1 gap-x-3 gap-y-12 sm:grid-cols-2 2xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
             className="overflow-hidden rounded-[32px] border border-[#d4f1ef] bg-white shadow-sm"
@@ -67,16 +57,14 @@ export default function ApartmentsListSection({
   paginaCorrente = 1,
   setPaginaCorrente = () => {},
   alwaysStickyNavigation = false,
-  detailedCard = true,
-  setDetailedCard = () => {},
-  showCity = false,
-  storageKey = "detailedCard",
   favoritesIds,
   filtersActive = false,
   setActiveFilters,
   searchMode = SEARCH_MODES.APARTMENTS,
   cityCoords = null,
   onRoomResultClick,
+  onSearchModeChange = () => {},
+  showSearchModeSwitch = true,
 }) {
   const isRoomSearch = searchMode === SEARCH_MODES.ROOMS;
   const hasKnownTotalCount =
@@ -126,7 +114,7 @@ export default function ApartmentsListSection({
     >
       {showLoading && <LoadingIcon />}
       {shouldShowInitialSkeleton ? (
-        <ApartmentsListSkeleton detailedCard={detailedCard} />
+        <ApartmentsListSkeleton />
       ) : (
         <>
           <div className="flex flex-col gap-4 sm:flex-row justify-between sm:items-center">
@@ -134,12 +122,12 @@ export default function ApartmentsListSection({
               {countLabel}
               {city && university && " a " + city + " - " + university}
             </p>
-            {!isRoomSearch && (
-              <LocalStorageToggleButton
-                label="Vista dettagliata"
-                storageKey={storageKey}
-                value={detailedCard}
-                onChange={setDetailedCard}
+            {showSearchModeSwitch && (
+              <SearchModeSwitch
+                mode={searchMode}
+                onChange={onSearchModeChange}
+                className="sm:mx-0"
+                iconClassName="w-7 h-7"
               />
             )}
           </div>
@@ -168,15 +156,7 @@ export default function ApartmentsListSection({
               )}
             </>
           )}
-          <div
-            className={`grid ${
-              isRoomSearch
-                ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
-                : detailedCard
-                  ? "grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3"
-                  : "grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4"
-            } gap-y-12 gap-x-3 w-full`}
-          >
+          <div className="grid w-full grid-cols-1 gap-x-3 gap-y-12 sm:grid-cols-2 2xl:grid-cols-3">
             {app.map((app) =>
               isRoomSearch ? (
                 <RoomSearchCard
@@ -187,7 +167,7 @@ export default function ApartmentsListSection({
                   onHoverOut={() => setHoveredApartmentId(null)}
                   onClick={onRoomResultClick}
                 />
-              ) : detailedCard ? (
+              ) : (
                 <ApartmentCard
                   key={app.id}
                   app={app}
@@ -196,26 +176,6 @@ export default function ApartmentsListSection({
                   handleClick={handleClick}
                   userId={userId}
                   liked={favoritesIds?.has(app.id) || false}
-                />
-              ) : (
-                <SmallCard
-                  key={app.id}
-                  app={app}
-                  onHover={() => setHoveredApartmentId(app.id)}
-                  onHoverOut={() => setHoveredApartmentId(null)}
-                  handleClick={handleClick}
-                  showCity={showCity}
-                  imageChildren={
-                    favoritesIds && (
-                      <div className="absolute top-2 right-2 bg-white/50 dark:bg-[#0F1829]/50 backdrop-blur-sm border-[#d4f1ee]/60 dark:border-[#394354] border-2 rounded-full py-1 px-2">
-                        <HeartToggle
-                          userID={userId}
-                          app={app}
-                          liked={favoritesIds?.has(app.id) || false}
-                        />
-                      </div>
-                    )
-                  }
                 />
               ),
             )}

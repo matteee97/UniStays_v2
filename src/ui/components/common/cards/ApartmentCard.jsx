@@ -150,7 +150,7 @@ export default function ApartmentCard({
                       ? `Avatar di ${item.displayName}`
                       : "Avatar coinquilino"
                   }
-                  className="h-6 w-6 rounded-full border-2 border-white shadow-sm"
+                  className="h-6 w-6 rounded-full border-2 border-[#d4f1ef] shadow-sm"
                   initialsClassName="text-[9px]"
                 />
               ))}

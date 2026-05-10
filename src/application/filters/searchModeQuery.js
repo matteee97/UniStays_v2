@@ -23,6 +23,26 @@ export const getSearchModeFromSearchParams = (searchParams) => {
 };
 
 /**
+ * Reads the listing mode only when the URL explicitly carries the query key.
+ *
+ * This lets UI controls keep their local mode while navigating through routes
+ * that intentionally omit the default apartments query parameter.
+ *
+ * @param {URLSearchParams | null | undefined} searchParams
+ * @returns {"apartments" | "rooms" | null}
+ */
+export const getExplicitSearchModeFromSearchParams = (searchParams) => {
+  if (
+    typeof searchParams?.has !== "function" ||
+    !searchParams.has(SEARCH_MODE_QUERY_KEY)
+  ) {
+    return null;
+  }
+
+  return normalizeSearchMode(searchParams.get(SEARCH_MODE_QUERY_KEY));
+};
+
+/**
  * Adds the search mode to an existing query string. The default apartments mode
  * is omitted so existing alloggi URLs stay clean and backwards compatible.
  *
